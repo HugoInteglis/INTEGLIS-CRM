@@ -258,7 +258,7 @@ textarea{resize:vertical;min-height:75px;line-height:1.5}
     <button class="nav-btn" id="nav-analytics" onclick="show('analytics')">Análisis</button>
   </nav>
   <div class="topbar-right" style="display:flex; align-items:center; gap:8px;">
-    <span id="cloud-sync-badge" style="display:flex; align-items:center; gap:5px; font-size:11px; color:rgba(255,255,255,0.7); background:rgba(255,255,255,0.06); padding:4px 8px; border-radius:12px; font-weight:500;">
+    <span id="cloud-sync-badge" onclick="openDataManagementModal()" style="display:flex; align-items:center; gap:5px; font-size:11px; color:rgba(255,255,255,0.7); background:rgba(255,255,255,0.06); padding:4px 8px; border-radius:12px; font-weight:500; cursor:pointer; transition: background 0.15s ease;" onmouseover="this.style.background='rgba(255,255,255,0.15)'" onmouseout="this.style.background='rgba(255,255,255,0.06)'" title="Ver estado de conexión / Respaldos">
       <span style="width:6px; height:6px; background:#e24b4a; border-radius:50%; display:inline-block;" id="cloud-sync-dot"></span>
       <span id="cloud-sync-text">Cargando Nube...</span>
     </span>
@@ -805,6 +805,54 @@ textarea{resize:vertical;min-height:75px;line-height:1.5}
     <div class="mf" style="justify-content: space-between; align-items: center; border-top: 1px solid var(--br); padding-top: 12px;">
       <button class="btn btn-ghost btn-sm" style="color: var(--pink); border: 1px solid var(--pink); padding: 5px 10px;" id="btn-empty-trash" onclick="emptyCurrentTrashTab()">Vaciar esta sección</button>
       <button class="btn btn-primary" onclick="mClose('m-trash')">Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: DATA MANAGEMENT & BACKUPS -->
+<div class="backdrop" id="m-data-mgmt" style="z-index: 9997;" onclick="bgClose(event,'m-data-mgmt')">
+  <div class="modal" style="max-width: 500px; width: 95%;">
+    <div class="mh" style="border-bottom: 1px solid var(--br); padding-bottom: 12px;">
+      <span class="mt2" style="font-weight: 600; font-size: 16px; color: #fff;">💾 Gestión de Datos y Respaldos</span>
+      <button class="cbtn" onclick="mClose('m-data-mgmt')">&#10005;</button>
+    </div>
+    
+    <div class="mb2" style="padding: 15px 0; display: flex; flex-direction: column; gap: 16px;">
+      
+      <!-- Backup Section -->
+      <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--br); border-radius: 8px; padding: 15px;">
+        <h4 style="margin: 0 0 8px 0; font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 6px; color: #fff;">
+          📦 Copia de Seguridad Manual (Migración)
+        </h4>
+        <p style="margin: 0 0 12px 0; font-size: 12px; color: var(--tx2); line-height: 1.4;">
+          Exporta tus clientes y cotizaciones desde el navegador donde los ves (por ejemplo, en el preview de AI Studio) y restáuralos aquí al instante.
+        </p>
+        <div style="display: flex; gap: 10px;">
+          <button class="btn btn-ghost btn-sm" onclick="exportBackupData()" style="flex: 1; border: 1px solid rgba(255,255,255,0.15); font-weight: 500; font-size: 12px; color: #fff; background: rgba(255,255,255,0.05); padding: 8px 12px; border-radius: 6px;">
+            ⬇️ Exportar Backup
+          </button>
+          <button class="btn btn-primary btn-sm" onclick="document.getElementById('import-db-file').click()" style="flex: 1; font-weight: 500; font-size: 12px; padding: 8px 12px; border-radius: 6px;">
+            ⬆️ Importar Backup
+          </button>
+          <input type="file" id="import-db-file" accept=".json" style="display: none;" onchange="importBackupData(event)">
+        </div>
+      </div>
+
+      <!-- Cloud Status Section -->
+      <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--br); border-radius: 8px; padding: 15px;">
+        <h4 style="margin: 0 0 8px 0; font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 6px; color: #fff;">
+          ☁️ Sincronización en la Nube
+        </h4>
+        
+        <div id="cloud-mgmt-status" style="margin-bottom: 5px;">
+          <!-- Will be filled dynamically: either Synced or showing instructions -->
+        </div>
+      </div>
+
+    </div>
+    
+    <div class="mf" style="border-top: 1px solid var(--br); padding-top: 12px; justify-content: flex-end;">
+      <button class="btn btn-ghost" onclick="mClose('m-data-mgmt')">Cerrar</button>
     </div>
   </div>
 </div>
@@ -3660,6 +3708,128 @@ checkAuth();
       window.checkAuth();
     }
   });
+
+  window.exportBackupData = function() {
+    try {
+      const dataStr = localStorage.getItem('integlis_crm4') || JSON.stringify(window.db);
+      const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+      
+      const exportFileDefaultName = 'integlis_crm_backup_' + new Date().toISOString().split('T')[0] + '.json';
+      
+      const linkElement = document.createElement('a');
+      linkElement.setAttribute('href', dataUri);
+      linkElement.setAttribute('download', exportFileDefaultName);
+      linkElement.click();
+    } catch(e) {
+      alert("Error al exportar los datos: " + e.message);
+    }
+  };
+
+  window.importBackupData = function(event) {
+    const fileReader = new FileReader();
+    fileReader.onload = function(e) {
+      try {
+        const parsedData = JSON.parse(e.target.result);
+        
+        // Basic validation
+        if (!parsedData || !parsedData.clients) {
+          alert("El archivo no parece ser un respaldo válido del CRM Integlis.");
+          return;
+        }
+        
+        // Confirm overwrite
+        window.customConfirm("¿Estás seguro de que deseas importar este respaldo? Esto reemplazará los datos actuales.", async function() {
+          window.db = parsedData;
+          localStorage.setItem('integlis_crm4', JSON.stringify(parsedData));
+          
+          if (typeof window.saveDB === 'function') {
+            window.saveDB();
+          }
+          
+          if (typeof window.mClose === 'function') {
+            window.mClose('m-data-mgmt');
+          } else {
+            document.getElementById('m-data-mgmt').classList.remove('open');
+          }
+          
+          // If Firebase is active and connected, push immediately
+          if (!window.firebaseDisabled && auth.currentUser) {
+            await bootstrapLocalDataToCloud();
+          } else {
+            location.reload();
+          }
+        });
+      } catch(err) {
+        alert("Error al leer o procesar el archivo: " + err.message);
+      }
+    };
+    if (event.target.files.length > 0) {
+      fileReader.readAsText(event.target.files[0]);
+    }
+  };
+
+  window.openDataManagementModal = function() {
+    const container = document.getElementById('cloud-mgmt-status');
+    if (!container) return;
+    
+    const isAuth = sessionStorage.getItem('integlis_crm_auth') === 'true';
+    const hasUser = auth.currentUser;
+    
+    if (window.firebaseDisabled) {
+      container.innerHTML = `
+        <div style="background: rgba(226,75,74,0.1); border: 1px solid rgba(226,75,74,0.3); border-radius: 6px; padding: 12px; margin-bottom: 12px;">
+          <p style="margin: 0; font-size: 13px; font-weight: 500; color: #ff6c6c; display: flex; align-items: center; gap: 6px;">
+            ⚠️ Proveedor "Correo y Contraseña" inactivo o bloqueado en Firebase
+          </p>
+        </div>
+        <p style="margin: 0 0 10px 0; font-size: 13px; color: var(--tx2); line-height: 1.45;">
+          El CRM está funcionando en <strong>Modo Local</strong> porque el proveedor de autenticación por email/contraseña no está habilitado en tu consola de Firebase.
+        </p>
+        <div style="font-size: 12px; color: var(--tx2); background: rgba(255,255,255,0.03); border: 1px solid var(--br); border-radius: 6px; padding: 12px; line-height: 1.5;">
+          <span style="font-weight: 600; color: #fff; display: block; margin-bottom: 6px;">🛠️ Cómo activar la Sincronización Automática:</span>
+          <ol style="margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 6px; text-align: left;">
+            <li>Entra a tu <strong><a href="https://console.firebase.google.com/" target="_blank" style="color: var(--purple); text-decoration: underline;">Consola de Firebase (clic aquí)</a></strong> y selecciona tu proyecto.</li>
+            <li>En el menú de la izquierda, entra a <strong>Authentication</strong>.</li>
+            <li>Ve a la pestaña <strong>Sign-in method</strong> (Método de inicio de sesión).</li>
+            <li>Haz clic en <strong>Agregar nuevo proveedor</strong> y selecciona <strong>Correo electrónico/Contraseña</strong> (Email/Password).</li>
+            <li>Habilita la primera opción (<strong>Correo electrónico/Contraseña</strong>) y haz clic en <strong>Guardar</strong>.</li>
+          </ol>
+          <span style="display: block; margin-top: 10px; font-style: italic; color: var(--tx3);">
+            ¡Listo! Al recargar el CRM e iniciar sesión con tu usuario, todos tus clientes y cotizaciones se guardarán y sincronizarán automáticamente en la nube.
+          </span>
+        </div>
+      `;
+    } else if (!isAuth) {
+      container.innerHTML = `
+        <p style="margin: 0; font-size: 13px; color: var(--tx2);">
+          Por favor, inicia sesión para gestionar la sincronización automática.
+        </p>
+      `;
+    } else if (hasUser) {
+      container.innerHTML = `
+        <div style="background: rgba(15,184,160,0.1); border: 1px solid rgba(15,184,160,0.3); border-radius: 6px; padding: 12px; margin-bottom: 12px;">
+           <p style="margin: 0; font-size: 13px; font-weight: 500; color: #0FB8A0; display: flex; align-items: center; gap: 6px;">
+             ✓ Sincronizado en la Nube (${hasUser.email || 'Sin Correo'})
+           </p>
+        </div>
+        <p style="margin: 0; font-size: 13px; color: var(--tx2); line-height: 1.45;">
+          Tu base de datos está conectada de forma segura con Firebase Firestore. Todos tus cambios se guardan y sincronizan automáticamente en tiempo real en todos tus dispositivos.
+        </p>
+      `;
+    } else {
+      container.innerHTML = `
+        <p style="margin: 0; font-size: 13px; color: var(--tx2); line-height: 1.45;">
+          Conectando con la nube... Si estás en Modo Local, puedes usar los botones de arriba para exportar/importar tus copias de seguridad manualmente.
+        </p>
+      `;
+    }
+    
+    if (typeof window.mOpen === 'function') {
+      window.mOpen('m-data-mgmt');
+    } else {
+      document.getElementById('m-data-mgmt').classList.add('open');
+    }
+  };
 </script>
 </body>
 </html>
