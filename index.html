@@ -2229,7 +2229,7 @@ function saveQuote() {
       db.quotes[qIndex].applyIva = applyIva;
       db.quotes[qIndex].ivaAmount = ivaAmount;
       db.quotes[qIndex].total = total;
-      db.quotes[qIndex].validity = document.getElementById('q-validity').value||30;
+      db.quotes[qIndex].validity = Number(document.getElementById('q-validity').value || 30);
       db.quotes[qIndex].delivery = document.getElementById('q-delivery').value.trim();
       db.quotes[qIndex].duration = document.getElementById('q-duration') ? document.getElementById('q-duration').value.trim() : '';
       db.quotes[qIndex].notes = document.getElementById('q-notes').value.trim();
@@ -2252,7 +2252,7 @@ function saveQuote() {
       applyIva: applyIva,
       ivaAmount: ivaAmount,
       total: total,
-      validity: document.getElementById('q-validity').value||30,
+      validity: Number(document.getElementById('q-validity').value || 30),
       delivery: document.getElementById('q-delivery').value.trim(),
       duration: document.getElementById('q-duration') ? document.getElementById('q-duration').value.trim() : '',
       notes: document.getElementById('q-notes').value.trim(),
@@ -3708,6 +3708,86 @@ checkAuth();
     return COLLECTIONS.every(key => !window.firestoreCache[key] || window.firestoreCache[key].length === 0);
   }
 
+  window.ensureLuisMejiaQuote = function() {
+    if (!auth.currentUser) return;
+    if (window.didEnsureLuisMejia) return;
+    window.didEnsureLuisMejia = true;
+
+    var dbVal = window.db || { clients: [], quotes: [] };
+    if (!dbVal.clients) dbVal.clients = [];
+    if (!dbVal.quotes) dbVal.quotes = [];
+
+    var luis = dbVal.clients.find(function(c) {
+      return c.name && c.name.toLowerCase().trim().indexOf('luis mej') >= 0;
+    });
+
+    var changed = false;
+
+    if (!luis) {
+      luis = {
+        id: "client-luis-mejia",
+        name: "Luis Mejía",
+        company: "Biopet",
+        email: "",
+        phone: "",
+        industry: "Mascotas",
+        web: "biopetgt.com",
+        notes: "Cliente registrado para desarrollo de software.",
+        status: "Cliente Activo",
+        createdAt: "2026-05-25T10:00:00.000Z"
+      };
+      dbVal.clients.push(luis);
+      changed = true;
+      console.log("Luis Mejía added to database.");
+    }
+
+    var quote = dbVal.quotes.find(function(q) {
+      return q.id === "quote-luis-mejia-01" || (q.clientId === luis.id && q.total === 2900 && q.date === "2026-05-25");
+    });
+
+    if (!quote) {
+      quote = {
+        id: "quote-luis-mejia-01",
+        number: 1,
+        clientId: luis.id,
+        clientName: luis.name,
+        clientCompany: luis.company,
+        clientNit: "C/F",
+        items: [
+          {
+            id: "service-custom-software",
+            name: "Software a medida para gestión de inventario y ventas",
+            price: 2900,
+            type: "Proyecto",
+            description: "-Diseño y desarrollo de software a medida para Biopetgt.com.\n-Software de gestión de inventario y CRM de ventas."
+          }
+        ],
+        subtotal: 2900,
+        discountValue: 0,
+        discountType: "monto",
+        discountAmount: 0,
+        applyIva: false,
+        ivaAmount: 0,
+        total: 2900,
+        validity: 7,
+        delivery: "15 días para la entrega, Pago anual",
+        duration: "",
+        notes: "Pago anticipado para la creación del software. Necesario que el cliente comparta inventarios e información que utilicen en las cotizaciones y ordenes de compra.",
+        terms: "1. Vigencia: Propuesta válida por 15 días calendario.\n2. Compromiso del Cliente: El plazo de entrega depende de la recepción oportuna de información e inventarios por parte del cliente.\n3. Alcance: Cualquier requerimiento no listado explícitamente se cotizará como un proyecto adicional de Software a Medida.\n4. Garantía: Incluye 30 días de garantía técnica; posterior a ello, aplica el servicio de Mantenimiento y Soporte mensual.\n5. Formalización: Para dar inicio a la ejecución, se deberá firmar un contrato formal que regule las responsabilidades y la duración del servicio.\n6. Se debe realizar el depósito a la cuenta bancaria indicada aquí:\nBanco Promerica\nTitular: HUGO ENRIQUE RODRIGUEZ RAMOS\nTipo: Monetaria\nMoneda: Quetzales\nNúmero: 12991050181787",
+        date: "2026-05-25"
+      };
+      dbVal.quotes.push(quote);
+      changed = true;
+      console.log("Quote COT-001 added for Luis Mejía.");
+    }
+
+    if (changed) {
+      if (typeof window.saveDB === 'function') {
+        window.saveDB();
+      }
+    }
+  };
+
   function hasLocalCacheData() {
     try {
       const localStr = localStorage.getItem('integlis_crm4');
@@ -3952,6 +4032,10 @@ checkAuth();
             if (allCollectionsLoaded()) {
               if (syncText) syncText.textContent = 'Sincronizado';
               if (syncDot) syncDot.style.backgroundColor = '#0FB8A0';
+
+              if (typeof window.ensureLuisMejiaQuote === 'function') {
+                window.ensureLuisMejiaQuote();
+              }
 
               if (isFirestoreEmpty() && hasLocalCacheData()) {
                 bootstrapLocalDataToCloud();

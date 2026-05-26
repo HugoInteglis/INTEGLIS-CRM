@@ -54,7 +54,7 @@
         "items": { "type": "array" },
         "discountValue": { "type": "number" },
         "discountType": { "type": "string" },
-        "applyIva": { "type": "string" },
+        "applyIva": { "type": "boolean" },
         "delivery": { "type": "string" },
         "duration": { "type": "string" },
         "notes": { "type": "string" },
