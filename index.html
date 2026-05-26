@@ -72,6 +72,11 @@ a{color:var(--purple);text-decoration:none}
 .ba{background:var(--tl);color:var(--teal)}
 .bp{background:var(--pl);color:var(--purple)}
 .bi2{background:var(--sur2);color:var(--tx2)}
+.b-activo{background:var(--tl);color:var(--teal)}
+.b-pasado{background:rgba(226,75,74,.08);color:#e24b4a}
+.b-prospecto{background:var(--pl);color:var(--purple)}
+.b-negociacion{background:var(--al);color:var(--amber)}
+.b-aplazado{background:rgba(107,107,128,.1);color:var(--tx2)}
 .fr{display:grid;grid-template-columns:1fr;gap:12px}
 @media(min-width:480px){.fr{grid-template-columns:1fr 1fr}}
 .fg{display:flex;flex-direction:column;gap:5px;margin-bottom:12px}
@@ -332,7 +337,14 @@ textarea{resize:vertical;min-height:75px;line-height:1.5}
     </div>
     <div class="sr">
       <input id="c-search" placeholder="Buscar por nombre, empresa o email..." oninput="renderClients()">
-      <select id="c-filter" onchange="renderClients()"><option value="">Todos</option><option value="Activo">Activos</option><option value="Prospecto">Prospectos</option><option value="Inactivo">Inactivos</option></select>
+      <select id="c-filter" onchange="renderClients()">
+        <option value="">Cualquier estado</option>
+        <option value="Cliente Activo">Cliente Activo</option>
+        <option value="Cliente en Negociación">Cliente en Negociación</option>
+        <option value="Prospecto">Prospecto</option>
+        <option value="Cliente Aplazado en el Tiempo">Cliente Aplazado</option>
+        <option value="Cliente Pasado">Cliente Pasado</option>
+      </select>
     </div>
     <div class="card" style="padding:0;overflow:hidden">
       <table class="tbl"><thead><tr><th>Cliente</th><th>Empresa</th><th>Teléfono</th><th>Estado</th><th>Próximo Cobro</th><th>Industria</th><th>Acciones</th></tr></thead>
@@ -461,7 +473,13 @@ textarea{resize:vertical;min-height:75px;line-height:1.5}
         <div class="fg"><label class="fl">Teléfono</label><input id="qc-phone" placeholder="+502 1234 5678"></div>
       </div>
       <div class="fg"><label class="fl">Estado</label>
-        <select id="qc-status"><option>Prospecto</option><option>Activo</option><option>Inactivo</option></select>
+        <select id="qc-status">
+          <option value="Cliente Activo">Cliente Activo</option>
+          <option value="Cliente en Negociación" selected>Cliente en Negociación</option>
+          <option value="Prospecto">Prospecto</option>
+          <option value="Cliente Aplazado en el Tiempo">Cliente Aplazado en el Tiempo</option>
+          <option value="Cliente Pasado">Cliente Pasado</option>
+        </select>
       </div>
     </div>
     <div class="mf">
@@ -485,7 +503,16 @@ textarea{resize:vertical;min-height:75px;line-height:1.5}
         <div class="fg"><label class="fl">Teléfono</label><input id="c-phone" placeholder="+502 1234 5678"></div>
       </div>
       <div class="fr">
-        <div class="fg"><label class="fl">Estado</label><select id="c-status"><option>Prospecto</option><option>Activo</option><option>Inactivo</option></select></div>
+        <div class="fg">
+          <label class="fl">Estado</label>
+          <select id="c-status">
+            <option value="Cliente Activo">Cliente Activo</option>
+            <option value="Cliente en Negociación">Cliente en Negociación</option>
+            <option value="Prospecto">Prospecto</option>
+            <option value="Cliente Aplazado en el Tiempo">Cliente Aplazado en el Tiempo</option>
+            <option value="Cliente Pasado">Cliente Pasado</option>
+          </select>
+        </div>
         <div class="fg"><label class="fl">Industria</label><input id="c-industry" placeholder="Retail, Manufactura..."></div>
       </div>
       <div class="fg"><label class="fl">Sitio web</label><input id="c-web" placeholder="https://empresa.com"></div>
@@ -948,6 +975,15 @@ function ac(n) { return AC[(n||'').charCodeAt(0) % AC.length]; }
 function todayStr() { return new Date().toISOString().split('T')[0]; }
 function isOverdue(d) { return d && d < todayStr(); }
 function isToday(d) { return d === todayStr(); }
+function getClientBadgeClass(status) {
+  var s = (status || '').toLowerCase().trim();
+  if (s === 'cliente activo' || s === 'activo') return 'b-activo';
+  if (s === 'cliente pasado' || s === 'pasado' || s === 'inactivo') return 'b-pasado';
+  if (s === 'prospecto') return 'b-prospecto';
+  if (s === 'cliente en negociación' || s === 'en negociacion' || s === 'en negociación' || s === 'negociación') return 'b-negociacion';
+  if (s === 'cliente aplazado' || s === 'cliente aplazado en el tiempo' || s === 'aplazado') return 'b-aplazado';
+  return 'bi2';
+}
 
 // NAV
 function show(v) {
@@ -984,7 +1020,7 @@ function renderDash() {
   document.getElementById('today-date').textContent = new Date().toLocaleDateString('es-GT', {weekday:'long', day:'numeric', month:'long', year:'numeric'});
   var openVal = 0; for (var i = 0; i < open.length; i++) openVal += Number(open[i].value||0);
   var wonVal = 0; for (var i = 0; i < won.length; i++) wonVal += Number(won[i].value||0);
-  var activeClients = db.clients.filter(function(c){ return c.status === 'Activo'; });
+  var activeClients = db.clients.filter(function(c){ return c.status === 'Cliente Activo' || c.status === 'Activo'; });
   var metrics = [
     {l:'Clientes totales', v:db.clients.length, c:'var(--purple)'},
     {l:'Clientes activos', v:activeClients.length, c:'var(--teal)'},
@@ -1105,7 +1141,7 @@ function renderDash() {
   if (rc.length) {
     for (var i = 0; i < rc.length; i++) {
       var c = rc[i];
-      var bClass = c.status === 'Activo' ? 'ba' : c.status === 'Prospecto' ? 'bp' : 'bi2';
+      var bClass = getClientBadgeClass(c.status);
       dcHtml += '<div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--br);cursor:pointer" onclick="openDetail(\'' + c.id + '\')">'
         + '<div class="av" style="background:' + ac(c.name) + '20;color:' + ac(c.name) + '">' + ini(c.name) + '</div>'
         + '<div style="flex:1"><div style="font-size:13px;font-weight:500">' + c.name + '</div><div style="font-size:12px;color:var(--tx2)">' + c.company + '</div></div>'
@@ -1226,10 +1262,28 @@ window.getClientBillingStatus = getClientBillingStatus;
 
 function renderClients() {
   var q = (document.getElementById('c-search').value || '').toLowerCase();
-  var sf = document.getElementById('c-filter').value;
+  var sf = (document.getElementById('c-filter').value || '').toLowerCase().trim();
   var list = db.clients.filter(function(c) {
     var m = c.name.toLowerCase().indexOf(q) >= 0 || c.company.toLowerCase().indexOf(q) >= 0 || (c.email||'').toLowerCase().indexOf(q) >= 0;
-    return m && (!sf || c.status === sf);
+    
+    var matchesSf = true;
+    if (sf) {
+      var cStatusResolved = (c.status || '').toLowerCase().trim();
+      var filterVal = sf.toLowerCase();
+      // exact or soft status match, including legacy mappings
+      if (cStatusResolved === filterVal) {
+        matchesSf = true;
+      } else if (filterVal === 'cliente activo' && cStatusResolved === 'activo') {
+        matchesSf = true;
+      } else if (filterVal === 'cliente pasado' && (cStatusResolved === 'inactivo' || cStatusResolved === 'pasado')) {
+        matchesSf = true;
+      } else if (filterVal === 'prospecto' && cStatusResolved === 'prospecto') {
+        matchesSf = true;
+      } else {
+        matchesSf = cStatusResolved === filterVal || cStatusResolved.indexOf(filterVal) >= 0;
+      }
+    }
+    return m && matchesSf;
   });
   document.getElementById('client-count').textContent = '(' + list.length + ')';
   var html = '';
@@ -1238,7 +1292,7 @@ function renderClients() {
   } else {
     for (var i = 0; i < list.length; i++) {
       var c = list[i];
-      var bClass = c.status === 'Activo' ? 'ba' : c.status === 'Prospecto' ? 'bp' : 'bi2';
+      var bClass = getClientBadgeClass(c.status);
       
       var billingBadge = '<span style="color:var(--tx3); font-style:italic; font-size:12px">—</span>';
       var billingData = getClientBillingStatus(c);
@@ -1296,7 +1350,7 @@ function openDetail(id) {
   var docs = db.docs.filter(function(d){ return d.clientId === id; });
   var tasks = db.tasks.filter(function(t){ return t.clientId === id; });
 
-  var bClass = c.status === 'Activo' ? 'ba' : c.status === 'Prospecto' ? 'bp' : 'bi2';
+  var bClass = getClientBadgeClass(c.status);
   var dealsHtml = '';
   if (deals.length) {
     for (var i = 0; i < deals.length; i++) {
@@ -1484,7 +1538,16 @@ function openClientModal(id) {
   document.getElementById('c-industry').value = c ? (c.industry||'') : '';
   document.getElementById('c-web').value = c ? (c.web||'') : '';
   document.getElementById('c-notes').value = c ? (c.notes||'') : '';
-  document.getElementById('c-status').value = c ? (c.status||'Prospecto') : 'Prospecto';
+  var currentStatus = 'Prospecto';
+  if (c && c.status) {
+    var rawStatus = c.status.toLowerCase().trim();
+    if (rawStatus === 'activo') currentStatus = 'Cliente Activo';
+    else if (rawStatus === 'inactivo' || rawStatus === 'pasado') currentStatus = 'Cliente Pasado';
+    else if (rawStatus === 'cliente aplazado' || rawStatus === 'cliente aplazado en el tiempo' || rawStatus === 'aplazado') currentStatus = 'Cliente Aplazado en el Tiempo';
+    else if (rawStatus === 'en negociacion' || rawStatus === 'en negociación' || rawStatus === 'negociación') currentStatus = 'Cliente en Negociación';
+    else currentStatus = c.status;
+  }
+  document.getElementById('c-status').value = currentStatus;
   document.getElementById('c-id').value = c ? c.id : '';
   mOpen('m-client');
 }
