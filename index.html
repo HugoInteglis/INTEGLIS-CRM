@@ -270,6 +270,22 @@ textarea{resize:vertical;min-height:75px;line-height:1.5}
 <!-- DASHBOARD -->
 <div class="view active" id="view-dashboard">
   <div class="ph"><div class="pt">Dashboard</div><span id="today-date" style="font-size:12px;color:var(--tx2)"></span></div>
+  
+  <!-- Welcome Banner -->
+  <div class="welcome-banner" style="background: linear-gradient(135deg, var(--purple) 0%, #9f94f2 100%); border-radius: var(--rl); padding: 20px 24px; margin-bottom: 1.5rem; display: flex; align-items: center; justify-content: space-between; color: #fff; box-shadow: 0 4px 20px rgba(124, 111, 224, 0.15); border: 1px solid rgba(124, 111, 224, 0.1);">
+    <div>
+      <h2 style="margin: 0 0 6px 0; font-size: 20px; font-weight: 700; letter-spacing: -0.02em; display: flex; align-items: center; gap: 8px;">
+        👋 ¡Hola Hugo, bienvenido!
+      </h2>
+      <p style="margin: 0; font-size: 13.5px; opacity: 0.93; line-height: 1.5; font-weight: 400; max-width: 650px;">
+        ¡Vamos a empezar a vender con toda la actitud! Revisa tus oportunidades, mantén al día tus clientes y haz crecer Integlis hoy.
+      </p>
+    </div>
+    <div style="font-size: 42px; filter: drop-shadow(0 4px 8px rgba(0,0,0,0.15)); user-select: none; line-height: 1;">
+      🚀
+    </div>
+  </div>
+
   <div class="mg" id="metrics"></div>
   <div class="grid-2col" style="margin-bottom:1rem">
     <div class="card"><div class="ct">Oportunidades recientes <button class="btn btn-ghost btn-sm" onclick="show('pipeline')">Ver todo</button></div><div id="dash-deals"></div></div>
