@@ -258,9 +258,9 @@ textarea{resize:vertical;min-height:75px;line-height:1.5}
     <button class="nav-btn" id="nav-analytics" onclick="show('analytics')">Análisis</button>
   </nav>
   <div class="topbar-right" style="display:flex; align-items:center; gap:8px;">
-    <span id="cloud-sync-badge" onclick="openDataManagementModal()" style="display:flex; align-items:center; gap:5px; font-size:11px; color:rgba(255,255,255,0.7); background:rgba(255,255,255,0.06); padding:4px 8px; border-radius:12px; font-weight:500; cursor:pointer; transition: background 0.15s ease;" onmouseover="this.style.background='rgba(255,255,255,0.15)'" onmouseout="this.style.background='rgba(255,255,255,0.06)'" title="Ver estado de conexión / Respaldos">
+    <span id="cloud-sync-badge" style="display:flex; align-items:center; gap:5px; font-size:11px; color:rgba(255,255,255,0.7); background:rgba(255,255,255,0.06); padding:4px 8px; border-radius:12px; font-weight:500;" title="Estado de sincronización en la nube">
       <span style="width:6px; height:6px; background:#e24b4a; border-radius:50%; display:inline-block;" id="cloud-sync-dot"></span>
-      <span id="cloud-sync-text">Cargando Nube...</span>
+      <span id="cloud-sync-text">Cargando...</span>
     </span>
     <button class="btn btn-primary btn-sm" onclick="openClientModal(null)">+ Nuevo cliente</button>
     <button class="btn btn-ghost btn-sm" onclick="logout()" style="color:#fff; border-color:rgba(255,255,255,0.25); background:rgba(255,255,255,0.06); font-weight:400;">Cerrar sesión</button>
@@ -303,7 +303,7 @@ textarea{resize:vertical;min-height:75px;line-height:1.5}
     <div class="card"><div class="ct">Clientes recientes <button class="btn btn-ghost btn-sm" onclick="show('clients')">Ver todo</button></div><div id="dash-clients"></div></div>
   </div>
   <div class="grid-2col">
-    <div class="card"><div class="ct" style="display:flex; justify-content:space-between; align-items:center;">Tareas pendientes <div style="display:flex; gap:6px;"><button class="btn btn-ghost btn-sm" onclick="openQuickTasksModal()" style="color:var(--amber); border-color:rgba(245,158,11,0.25);">⚡ Abrir en Popup</button><button class="btn btn-ghost btn-sm" onclick="show('tasks')">Ver todo</button></div></div><div id="dash-tasks"></div></div>
+    <div class="card"><div class="ct">Tareas pendientes <button class="btn btn-ghost btn-sm" onclick="show('tasks')">Ver todo</button></div><div id="dash-tasks"></div></div>
     <div class="card"><div class="ct">Documentos recientes <button class="btn btn-ghost btn-sm" onclick="show('finance')">Ver todo</button></div><div id="dash-docs"></div></div>
   </div>
 </div>
@@ -777,7 +777,7 @@ textarea{resize:vertical;min-height:75px;line-height:1.5}
       <div class="fg">
         <label class="fl">Archivo (PDF, imagen)</label>
         <input type="file" id="doc-file" accept=".pdf,.png,.jpg,.jpeg,.webp" style="padding:6px">
-        <span style="font-size:11px;color:var(--tx2);margin-top:2px">El archivo se guarda localmente en tu navegador.</span>
+        <span style="font-size:11px;color:var(--tx2);margin-top:2px">El archivo se sincroniza con tu base de datos en la nube.</span>
       </div>
       <input type="hidden" id="doc-id">
     </div>
@@ -806,20 +806,6 @@ textarea{resize:vertical;min-height:75px;line-height:1.5}
           <select id="t-cat"><option value="seguimiento">Seguimiento</option><option value="propuesta">Propuesta</option><option value="reunion">Reunión</option><option value="admin">Administración</option><option value="otro">Otro</option></select>
         </div>
       </div>
-      <div class="fr" style="margin-top: 10px;">
-        <div class="fg">
-          <label class="fl">Acción de seguimiento / Canal</label>
-          <select id="t-action">
-            <option value="ninguna" selected>Ninguna / Otro</option>
-            <option value="llamar">📞 Llamada telefónica</option>
-            <option value="correo">📧 Correo electrónico</option>
-            <option value="linkedin">💬 Mensaje de LinkedIn</option>
-            <option value="whatsapp">🟢 Mensaje de WhatsApp</option>
-            <option value="reunion">👥 Reunión (Virtual/Presencial)</option>
-            <option value="propuesta">✍️ Enviar propuesta/cotización</option>
-          </select>
-        </div>
-      </div>
       <div class="fg"><label class="fl">Notas</label><textarea id="t-notes" placeholder="Detalles adicionales..."></textarea></div>
       <input type="hidden" id="t-id">
     </div>
@@ -827,29 +813,6 @@ textarea{resize:vertical;min-height:75px;line-height:1.5}
       <button class="btn btn-ghost" onclick="mClose('m-task')">Cancelar</button>
       <button class="btn btn-danger btn-sm" id="t-del-btn" style="margin-right:auto;display:none" onclick="delTask()">Eliminar</button>
       <button class="btn btn-primary" onclick="saveTask()">Guardar</button>
-    </div>
-  </div>
-</div>
-
-<!-- MODAL: PENDING QUICK TASKS -->
-<div class="backdrop" id="m-quick-tasks" style="z-index: 300;" onclick="bgClose(event,'m-quick-tasks')">
-  <div class="modal" style="max-width: 650px; width: 90%; max-height: 85vh; display: flex; flex-direction: column; overflow: hidden; padding: 0;">
-    <div class="mh" style="padding: 18px 24px; border-bottom: 1px solid var(--br); flex-shrink: 0;">
-      <div style="display: flex; align-items: center; gap: 8px;">
-        <span style="font-size: 20px;">⏱️</span>
-        <span class="mt2" style="font-weight: 700; font-size: 18px; letter-spacing: -0.02em; margin: 0;">Tareas Pendientes de Seguimiento</span>
-      </div>
-      <button class="cbtn" onclick="mClose('m-quick-tasks')">&#10005;</button>
-    </div>
-    <div class="mb2" style="overflow-y: auto; flex: 1; padding: 20px 24px; display: flex; flex-direction: column; gap: 12px; margin: 0;" id="quick-tasks-list">
-      <!-- Populated dynamically -->
-    </div>
-    <div class="mf" style="border-top: 1px solid var(--br); padding: 16px 24px; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;">
-      <button class="btn btn-ghost" onclick="mClose('m-quick-tasks')">Cerrar</button>
-      <div style="display:flex; gap:8px;">
-        <button class="btn btn-ghost btn-sm" onclick="mClose('m-quick-tasks'); openTaskModal(null,null)">+ Nueva tarea</button>
-        <button class="btn btn-primary btn-sm" onclick="mClose('m-quick-tasks'); show('tasks')" style="background:var(--purple); border-color:var(--purple);">Ver sección de Tareas</button>
-      </div>
     </div>
   </div>
 </div>
@@ -897,54 +860,6 @@ textarea{resize:vertical;min-height:75px;line-height:1.5}
     <div class="mf" style="justify-content: space-between; align-items: center; border-top: 1px solid var(--br); padding-top: 12px;">
       <button class="btn btn-ghost btn-sm" style="color: var(--pink); border: 1px solid var(--pink); padding: 5px 10px;" id="btn-empty-trash" onclick="emptyCurrentTrashTab()">Vaciar esta sección</button>
       <button class="btn btn-primary" onclick="mClose('m-trash')">Cerrar</button>
-    </div>
-  </div>
-</div>
-
-<!-- MODAL: DATA MANAGEMENT & BACKUPS -->
-<div class="backdrop" id="m-data-mgmt" style="z-index: 9997;" onclick="bgClose(event,'m-data-mgmt')">
-  <div class="modal" style="max-width: 500px; width: 95%;">
-    <div class="mh" style="border-bottom: 1px solid var(--br); padding-bottom: 12px;">
-      <span class="mt2" style="font-weight: 600; font-size: 16px; color: #fff;">💾 Gestión de Datos y Respaldos</span>
-      <button class="cbtn" onclick="mClose('m-data-mgmt')">&#10005;</button>
-    </div>
-    
-    <div class="mb2" style="padding: 15px 0; display: flex; flex-direction: column; gap: 16px;">
-      
-      <!-- Backup Section -->
-      <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--br); border-radius: 8px; padding: 15px;">
-        <h4 style="margin: 0 0 8px 0; font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 6px; color: #fff;">
-          📦 Copia de Seguridad Manual (Migración)
-        </h4>
-        <p style="margin: 0 0 12px 0; font-size: 12px; color: var(--tx2); line-height: 1.4;">
-          Exporta tus clientes y cotizaciones desde el navegador donde los ves (por ejemplo, en el preview de AI Studio) y restáuralos aquí al instante.
-        </p>
-        <div style="display: flex; gap: 10px;">
-          <button class="btn btn-ghost btn-sm" onclick="exportBackupData()" style="flex: 1; border: 1px solid rgba(255,255,255,0.15); font-weight: 500; font-size: 12px; color: #fff; background: rgba(255,255,255,0.05); padding: 8px 12px; border-radius: 6px;">
-            ⬇️ Exportar Backup
-          </button>
-          <button class="btn btn-primary btn-sm" onclick="document.getElementById('import-db-file').click()" style="flex: 1; font-weight: 500; font-size: 12px; padding: 8px 12px; border-radius: 6px;">
-            ⬆️ Importar Backup
-          </button>
-          <input type="file" id="import-db-file" accept=".json" style="display: none;" onchange="importBackupData(event)">
-        </div>
-      </div>
-
-      <!-- Cloud Status Section -->
-      <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--br); border-radius: 8px; padding: 15px;">
-        <h4 style="margin: 0 0 8px 0; font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 6px; color: #fff;">
-          ☁️ Sincronización en la Nube
-        </h4>
-        
-        <div id="cloud-mgmt-status" style="margin-bottom: 5px;">
-          <!-- Will be filled dynamically: either Synced or showing instructions -->
-        </div>
-      </div>
-
-    </div>
-    
-    <div class="mf" style="border-top: 1px solid var(--br); padding-top: 12px; justify-content: flex-end;">
-      <button class="btn btn-ghost" onclick="mClose('m-data-mgmt')">Cerrar</button>
     </div>
   </div>
 </div>
@@ -1075,21 +990,12 @@ function renderDash() {
     {l:'Clientes activos', v:activeClients.length, c:'var(--teal)'},
     {l:'Pipeline total', v:Q(openVal), c:'var(--amber)'},
     {l:'Ingresos cerrados', v:Q(wonVal), c:'var(--teal)'},
-    {l:'Tareas pendientes', v:pendingTasks.length, c:'var(--amber)', click: 'openQuickTasksModal()'},
+    {l:'Tareas pendientes', v:pendingTasks.length, c:'var(--amber)'},
     {l:'Docs pendientes', v:pendingDocs.length, c:'#e24b4a'}
   ];
   var mHtml = '';
   for (var i = 0; i < metrics.length; i++) {
-    var item = metrics[i];
-    if (item.click) {
-      mHtml += '<div class="mc" onclick="' + item.click + '" style="cursor:pointer; transition: transform 0.15s, border-color 0.15s, box-shadow 0.15s; border-color: rgba(245,158,11,0.25);" onmouseover="this.style.transform=\'translateY(-2px)\'; this.style.borderColor=\'var(--amber)\'; this.style.boxShadow=\'0 4px 12px rgba(245,158,11,0.08)\'" onmouseout="this.style.transform=\'none\'; this.style.borderColor=\'var(--br)\'; this.style.boxShadow=\'none\'">'
-        + '<div class="ml" style="display:flex; align-items:center; justify-content:center; gap:5px;">' + item.l + ' ⚡</div>'
-        + '<div class="mv" style="color:' + item.c + '">' + item.v + '</div>'
-        + '<div style="font-size:10px; color:var(--tx3); margin-top:2px;">(Clic para abrir rápido)</div>'
-        + '</div>';
-    } else {
-      mHtml += '<div class="mc"><div class="ml">' + item.l + '</div><div class="mv" style="color:' + item.c + '">' + item.v + '</div></div>';
-    }
+    mHtml += '<div class="mc"><div class="ml">' + metrics[i].l + '</div><div class="mv" style="color:' + metrics[i].c + '">' + metrics[i].v + '</div></div>';
   }
   document.getElementById('metrics').innerHTML = mHtml;
 
@@ -1225,11 +1131,6 @@ function renderDash() {
     }
   } else { ddoHtml = '<div class="empty" style="padding:1.5rem">Sin documentos</div>'; }
   document.getElementById('dash-docs').innerHTML = ddoHtml;
-
-  var qtModal = document.getElementById('m-quick-tasks');
-  if (qtModal && qtModal.classList.contains('open')) {
-    renderQuickTasks();
-  }
 }
 
 // PIPELINE
@@ -2755,21 +2656,6 @@ function taskRow(t, compact) {
   var tod = isToday(t.due) && !t.done;
   var dueClass = od ? 'overdue' : tod ? 'today' : '';
   var dueColor = od ? '#e24b4a' : tod ? 'var(--amber)' : 'var(--tx2)';
-  
-  var actionHtml = '';
-  if (t.action && t.action !== 'ninguna') {
-    var actLabels = {
-      llamar: '📞 Llamada',
-      correo: '📧 Correo',
-      linkedin: '💬 LinkedIn',
-      whatsapp: '🟢 WhatsApp',
-      reunion: '👥 Reunión',
-      propuesta: '✍️ Propuesta'
-    };
-    var actLabel = actLabels[t.action] || t.action;
-    actionHtml = '<span style="background:rgba(124,111,224,0.15); color:#a59bf5; padding:1px 6px; border:1px solid rgba(124,111,224,0.3); border-radius:8px; font-size:11px; font-weight:600; display:inline-flex; align-items:center;">' + actLabel + '</span>';
-  }
-
   return '<div class="task-item">'
     + '<div class="prio-dot" style="background:' + (PRIO_COLOR[t.priority]||'#888') + '"></div>'
     + '<div class="task-cb ' + (t.done?'done':'') + '" onclick="toggleTask(\'' + t.id + '\')">' + (t.done?'&#10003;':'') + '</div>'
@@ -2779,7 +2665,6 @@ function taskRow(t, compact) {
     + (t.due ? '<span class="task-due" style="color:' + dueColor + '">' + (od?'Vencida · ':tod?'Hoy · ':'') + dt(t.due) + '</span>' : '')
     + (cl ? '<span>' + cl.name + '</span>' : '')
     + (t.category ? '<span style="background:var(--sur2);padding:1px 6px;border-radius:8px;font-size:11px">' + t.category + '</span>' : '')
-    + actionHtml
     + '</div></div>'
     + '<div style="display:flex; gap:6px; align-items:center;">'
     + '<button type="button" class="bi btn-sm" onclick="event.stopPropagation(); openTaskModal(null,\'' + t.id + '\')" title="Editar tarea">&#9998;</button>'
@@ -2834,7 +2719,6 @@ function openTaskModal(clientId, taskId) {
   document.getElementById('t-due').value = t ? (t.due||'') : '';
   document.getElementById('t-priority').value = t ? (t.priority||'media') : 'media';
   document.getElementById('t-cat').value = t ? (t.category||'seguimiento') : 'seguimiento';
-  document.getElementById('t-action').value = t ? (t.action||'ninguna') : 'ninguna';
   document.getElementById('t-notes').value = t ? (t.notes||'') : '';
   document.getElementById('t-id').value = t ? t.id : '';
   document.getElementById('t-del-btn').style.display = t ? 'inline-flex' : 'none';
@@ -2859,7 +2743,6 @@ function saveTask() {
     due:document.getElementById('t-due').value,
     priority:document.getElementById('t-priority').value,
     category:document.getElementById('t-cat').value,
-    action:document.getElementById('t-action').value,
     clientId:document.getElementById('t-client').value,
     notes:document.getElementById('t-notes').value.trim(),
     done:existingDone, createdAt:new Date().toISOString()};
@@ -2913,43 +2796,6 @@ function deleteTaskDirect(id) {
     if (isDetailOpen && currentClient) openDetail(currentClient);
   });
 }
-
-function openQuickTasksModal() {
-  renderQuickTasks();
-  mOpen('m-quick-tasks');
-}
-window.openQuickTasksModal = openQuickTasksModal;
-
-function renderQuickTasks() {
-  var pending = db.tasks.filter(function(t) { return !t.done; });
-  
-  // Sort tasks chronological, overdue first
-  var tod = todayStr();
-  pending.sort(function(a, b) {
-    if (!a.due && !b.due) return 0;
-    if (!a.due) return 1;
-    if (!b.due) return -1;
-    return a.due.localeCompare(b.due);
-  });
-
-  var listEl = document.getElementById('quick-tasks-list');
-  if (!listEl) return;
-
-  if (!pending.length) {
-    listEl.innerHTML = '<div class="empty" style="padding:2.5rem 1rem; border:1px dashed var(--br); border-radius:var(--rl); text-align:center; color:var(--tx2); width:100%;">'
-      + '<span style="font-size:32px; display:block; margin-bottom:12px;">🎉</span>'
-      + '<h4 style="margin:8px 0; color:#fff; font-size:15px; font-weight:600;">¡Estás al día!</h4>'
-      + '<p style="margin:0; font-size:12.5px; color:var(--tx2);">No tienes ninguna tarea de seguimiento pendiente por el momento.</p></div>';
-    return;
-  }
-
-  var html = pending.map(function(t) {
-    return taskRow(t, false);
-  }).join('');
-
-  listEl.innerHTML = html;
-}
-window.renderQuickTasks = renderQuickTasks;
 
 // ANALYTICS
 function renderAnalytics() {
@@ -3851,16 +3697,7 @@ checkAuth();
       if (loginEl) loginEl.style.display = 'none';
       if (appEl) appEl.style.display = 'block';
 
-      if (window.firebaseDisabled) {
-        const syncText = document.getElementById('cloud-sync-text');
-        const syncDot = document.getElementById('cloud-sync-dot');
-        if (syncText) syncText.textContent = 'Modo Local';
-        if (syncDot) syncDot.style.backgroundColor = '#f1c40f';
-
-        if (typeof window.renderAllViews === 'function') {
-          window.renderAllViews();
-        }
-      } else if (auth.currentUser) {
+      if (auth.currentUser) {
         if (allCollectionsLoaded()) {
           if (typeof window.renderAllViews === 'function') {
             window.renderAllViews();
@@ -3868,7 +3705,7 @@ checkAuth();
         }
       } else {
         // Local session is active but Firebase Auth is loading. Show the CRM container to prevent screen blinking
-        console.log("Sesión activa localmente, esperando conexión o funcionando local...");
+        console.log("Sesión activa, esperando conexión con Firebase...");
         if (typeof window.renderAllViews === 'function') {
           window.renderAllViews();
         }
@@ -3883,7 +3720,7 @@ checkAuth();
   window.saveDB = async function() {
     if (originalSaveDB) originalSaveDB();
 
-    if (window.firebaseDisabled || !auth.currentUser) return;
+    if (!auth.currentUser) return;
     if (window.isSavingToFirebase) return;
 
     window.isSavingToFirebase = true;
@@ -3958,50 +3795,44 @@ checkAuth();
       submitBtn.textContent = 'Iniciando sesión...';
     }
 
-    if (email === 'hugo@integlis.com' && pass === 'Tikisate2310@') {
-      try {
-        try {
-          await signInWithEmailAndPassword(auth, email, pass);
-        } catch(subErr) {
-          console.warn("Sign-in failed. Attempting to register on Firebase Auth:", subErr.message);
-          if (subErr.code === 'auth/user-not-found' || subErr.code === 'auth/invalid-credential') {
-            try {
-              await createUserWithEmailAndPassword(auth, email, pass);
-            } catch (regErr) {
-              console.warn("Auto-register failed, falling back to anonymous session:", regErr.message);
-              await signInAnonymously(auth);
-            }
-          } else {
-            console.warn("Other login error, falling back to anonymous session:", subErr.message);
-            await signInAnonymously(auth);
-          }
-        }
-        sessionStorage.setItem('integlis_crm_auth', 'true');
-        if (errEl) errEl.style.display = 'none';
-        window.checkAuth();
-      } catch(err) {
-        console.warn("Firebase Auth is restricted/disabled, logging in locally:", err.message);
-        window.firebaseDisabled = true;
-        sessionStorage.setItem('integlis_crm_auth', 'true');
-        if (errEl) errEl.style.display = 'none';
-        
-        const syncText = document.getElementById('cloud-sync-text');
-        const syncDot = document.getElementById('cloud-sync-dot');
-        if (syncText) syncText.textContent = 'Modo Local';
-        if (syncDot) syncDot.style.backgroundColor = '#f1c40f';
-
-        window.checkAuth();
-      } finally {
-        if (submitBtn) {
-          submitBtn.disabled = false;
-          submitBtn.textContent = 'Iniciar Sesión';
-        }
-      }
-    } else {
+    if (email !== 'hugo@integlis.com' || pass !== 'Tikisate2310@') {
       if (errEl) {
-        errEl.textContent = 'El correo o contraseña ingresados son incorrectos.';
+        errEl.textContent = 'El correo o la contraseña ingresados son incorrectos.';
         errEl.style.display = 'block';
       }
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Iniciar Sesión';
+      }
+      return;
+    }
+
+    try {
+      try {
+        await signInWithEmailAndPassword(auth, email, pass);
+      } catch(subErr) {
+        console.warn("Sign-in failed. Attempting to register on Firebase Auth:", subErr.message);
+        if (subErr.code === 'auth/user-not-found' || subErr.code === 'auth/invalid-credential' || subErr.message.includes('INVALID_LOGIN_CREDENTIALS')) {
+          try {
+            await createUserWithEmailAndPassword(auth, email, pass);
+          } catch (regErr) {
+            console.error("Auto-register failed:", regErr.message);
+            throw new Error("Error al registrar el usuario en Firebase: " + regErr.message);
+          }
+        } else {
+          throw subErr;
+        }
+      }
+      sessionStorage.setItem('integlis_crm_auth', 'true');
+      if (errEl) errEl.style.display = 'none';
+      window.checkAuth();
+    } catch(err) {
+      console.error("Firebase Auth failed:", err.message);
+      if (errEl) {
+        errEl.textContent = 'Error de conexión o autenticación con Firebase: ' + err.message;
+        errEl.style.display = 'block';
+      }
+    } finally {
       if (submitBtn) {
         submitBtn.disabled = false;
         submitBtn.textContent = 'Iniciar Sesión';
@@ -4067,19 +3898,6 @@ checkAuth();
       });
 
       window.checkAuth();
-    } else if (isAuth) {
-      console.log("Local session is active but Firebase Auth is empty. Executing silent sync login...");
-      try {
-        await signInWithEmailAndPassword(auth, 'hugo@integlis.com', 'Tikisate2310@');
-      } catch (e2) {
-        console.warn("Silent background login failed:", e2.message);
-        window.firebaseDisabled = true;
-        const syncText = document.getElementById('cloud-sync-text');
-        const syncDot = document.getElementById('cloud-sync-dot');
-        if (syncText) syncText.textContent = 'Modo Local';
-        if (syncDot) syncDot.style.backgroundColor = '#f1c40f';
-        window.checkAuth();
-      }
     } else {
       console.log("User signed out");
       window.fbUser = null;
@@ -4100,127 +3918,6 @@ checkAuth();
     }
   });
 
-  window.exportBackupData = function() {
-    try {
-      const dataStr = localStorage.getItem('integlis_crm4') || JSON.stringify(window.db);
-      const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
-      
-      const exportFileDefaultName = 'integlis_crm_backup_' + new Date().toISOString().split('T')[0] + '.json';
-      
-      const linkElement = document.createElement('a');
-      linkElement.setAttribute('href', dataUri);
-      linkElement.setAttribute('download', exportFileDefaultName);
-      linkElement.click();
-    } catch(e) {
-      alert("Error al exportar los datos: " + e.message);
-    }
-  };
-
-  window.importBackupData = function(event) {
-    const fileReader = new FileReader();
-    fileReader.onload = function(e) {
-      try {
-        const parsedData = JSON.parse(e.target.result);
-        
-        // Basic validation
-        if (!parsedData || !parsedData.clients) {
-          alert("El archivo no parece ser un respaldo válido del CRM Integlis.");
-          return;
-        }
-        
-        // Confirm overwrite
-        window.customConfirm("¿Estás seguro de que deseas importar este respaldo? Esto reemplazará los datos actuales.", async function() {
-          window.db = parsedData;
-          localStorage.setItem('integlis_crm4', JSON.stringify(parsedData));
-          
-          if (typeof window.saveDB === 'function') {
-            window.saveDB();
-          }
-          
-          if (typeof window.mClose === 'function') {
-            window.mClose('m-data-mgmt');
-          } else {
-            document.getElementById('m-data-mgmt').classList.remove('open');
-          }
-          
-          // If Firebase is active and connected, push immediately
-          if (!window.firebaseDisabled && auth.currentUser) {
-            await bootstrapLocalDataToCloud();
-          } else {
-            location.reload();
-          }
-        });
-      } catch(err) {
-        alert("Error al leer o procesar el archivo: " + err.message);
-      }
-    };
-    if (event.target.files.length > 0) {
-      fileReader.readAsText(event.target.files[0]);
-    }
-  };
-
-  window.openDataManagementModal = function() {
-    const container = document.getElementById('cloud-mgmt-status');
-    if (!container) return;
-    
-    const isAuth = sessionStorage.getItem('integlis_crm_auth') === 'true';
-    const hasUser = auth.currentUser;
-    
-    if (window.firebaseDisabled) {
-      container.innerHTML = `
-        <div style="background: rgba(226,75,74,0.1); border: 1px solid rgba(226,75,74,0.3); border-radius: 6px; padding: 12px; margin-bottom: 12px;">
-          <p style="margin: 0; font-size: 13px; font-weight: 500; color: #ff6c6c; display: flex; align-items: center; gap: 6px;">
-            ⚠️ Proveedor "Correo y Contraseña" inactivo o bloqueado en Firebase
-          </p>
-        </div>
-        <p style="margin: 0 0 10px 0; font-size: 13px; color: var(--tx2); line-height: 1.45;">
-          El CRM está funcionando en <strong>Modo Local</strong> porque el proveedor de autenticación por email/contraseña no está habilitado en tu consola de Firebase.
-        </p>
-        <div style="font-size: 12px; color: var(--tx2); background: rgba(255,255,255,0.03); border: 1px solid var(--br); border-radius: 6px; padding: 12px; line-height: 1.5;">
-          <span style="font-weight: 600; color: #fff; display: block; margin-bottom: 6px;">🛠️ Cómo activar la Sincronización Automática:</span>
-          <ol style="margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 6px; text-align: left;">
-            <li>Entra a tu <strong><a href="https://console.firebase.google.com/" target="_blank" style="color: var(--purple); text-decoration: underline;">Consola de Firebase (clic aquí)</a></strong> y selecciona tu proyecto.</li>
-            <li>En el menú de la izquierda, entra a <strong>Authentication</strong>.</li>
-            <li>Ve a la pestaña <strong>Sign-in method</strong> (Método de inicio de sesión).</li>
-            <li>Haz clic en <strong>Agregar nuevo proveedor</strong> y selecciona <strong>Correo electrónico/Contraseña</strong> (Email/Password).</li>
-            <li>Habilita la primera opción (<strong>Correo electrónico/Contraseña</strong>) y haz clic en <strong>Guardar</strong>.</li>
-          </ol>
-          <span style="display: block; margin-top: 10px; font-style: italic; color: var(--tx3);">
-            ¡Listo! Al recargar el CRM e iniciar sesión con tu usuario, todos tus clientes y cotizaciones se guardarán y sincronizarán automáticamente en la nube.
-          </span>
-        </div>
-      `;
-    } else if (!isAuth) {
-      container.innerHTML = `
-        <p style="margin: 0; font-size: 13px; color: var(--tx2);">
-          Por favor, inicia sesión para gestionar la sincronización automática.
-        </p>
-      `;
-    } else if (hasUser) {
-      container.innerHTML = `
-        <div style="background: rgba(15,184,160,0.1); border: 1px solid rgba(15,184,160,0.3); border-radius: 6px; padding: 12px; margin-bottom: 12px;">
-           <p style="margin: 0; font-size: 13px; font-weight: 500; color: #0FB8A0; display: flex; align-items: center; gap: 6px;">
-             ✓ Sincronizado en la Nube (${hasUser.email || 'Sin Correo'})
-           </p>
-        </div>
-        <p style="margin: 0; font-size: 13px; color: var(--tx2); line-height: 1.45;">
-          Tu base de datos está conectada de forma segura con Firebase Firestore. Todos tus cambios se guardan y sincronizan automáticamente en tiempo real en todos tus dispositivos.
-        </p>
-      `;
-    } else {
-      container.innerHTML = `
-        <p style="margin: 0; font-size: 13px; color: var(--tx2); line-height: 1.45;">
-          Conectando con la nube... Si estás en Modo Local, puedes usar los botones de arriba para exportar/importar tus copias de seguridad manualmente.
-        </p>
-      `;
-    }
-    
-    if (typeof window.mOpen === 'function') {
-      window.mOpen('m-data-mgmt');
-    } else {
-      document.getElementById('m-data-mgmt').classList.add('open');
-    }
-  };
 </script>
 </body>
 </html>
