@@ -3062,7 +3062,14 @@ function renderAnalytics() {
 }
 
 // MODAL HELPERS
-function mOpen(id) { document.getElementById(id).classList.add('open'); }
+function mOpen(id) { 
+  document.getElementById(id).classList.add('open'); 
+  setTimeout(function() {
+    if (typeof window.showDraftBanner === 'function') {
+      window.showDraftBanner(id);
+    }
+  }, 150);
+}
 function mClose(id) { document.getElementById(id).classList.remove('open'); }
 function bgClose(e, id) { if (e.target === document.getElementById(id)) mClose(id); }
 
@@ -3782,6 +3789,7 @@ checkAuth();
   // Override saveDB to sync to Firestore differentially
   window.saveDB = async function() {
     if (originalSaveDB) originalSaveDB();
+    if (window.clearActiveModalDraft) window.clearActiveModalDraft();
 
     if (!auth.currentUser) return;
     if (window.isSavingToFirebase) return;
@@ -3980,6 +3988,150 @@ checkAuth();
       window.checkAuth();
     }
   });
+
+  // DRAFTS AND RECOVERY ENGINE
+  (function() {
+    // Listen to input and change events inside any backdrop modal
+    document.addEventListener('input', handleFormInteraction);
+    document.addEventListener('change', handleFormInteraction);
+
+    function handleFormInteraction(e) {
+      var target = e.target;
+      if (!target || !target.id) return;
+
+      var backdrop = target.closest('.backdrop');
+      if (!backdrop) return;
+
+      var modalId = backdrop.id;
+      // Exclude system modals that do not need drafts
+      if (!modalId || modalId === 'm-confirm' || modalId === 'm-trash' || modalId === 'm-pdf') return;
+
+      saveModalDraft(modalId);
+    }
+
+    function saveModalDraft(modalId) {
+      var backdrop = document.getElementById(modalId);
+      if (!backdrop) return;
+
+      var fields = {};
+      var inputs = backdrop.querySelectorAll('input, select, textarea');
+      inputs.forEach(function(el) {
+        if (el.id && el.type !== 'file' && el.type !== 'submit' && el.type !== 'button') {
+          fields[el.id] = el.value || '';
+        }
+      });
+
+      var draft = {
+        timestamp: Date.now(),
+        fields: fields
+      };
+
+      localStorage.setItem('draft_' + modalId, JSON.stringify(draft));
+      showDraftBanner(modalId);
+    }
+
+    window.showDraftBanner = function(modalId) {
+      var backdrop = document.getElementById(modalId);
+      if (!backdrop) return;
+
+      // Check if banner is already visible
+      var existing = document.getElementById('draft-banner-' + modalId);
+      if (existing) return;
+
+      var draftStr = localStorage.getItem('draft_' + modalId);
+      if (!draftStr) return;
+
+      try {
+        var draft = JSON.parse(draftStr);
+        if (!draft || !draft.fields) return;
+
+        // Ensure the drafted entity matches the currently loaded state (e.g. matching c-id, cs-id, etc)
+        var idEl = backdrop.querySelector('input[type="hidden"][id$="-id"], input[type="hidden"][id^="doc-id"], input[type="hidden"][id="c-id"]');
+        var currentId = idEl ? idEl.value : '';
+        var draftedIdKey = idEl ? idEl.id : '';
+        var draftedId = draftedIdKey ? (draft.fields[draftedIdKey] || '') : '';
+
+        if (currentId !== draftedId) return;
+
+        // Verify there is actual meaningful content to restore (ignoring defaults/IDs/defaults)
+        var hasContent = false;
+        for (var key in draft.fields) {
+          if (key.endsWith('-id') || key === 'cs-id' || key === 'c-id' || key === 'd-id' || key === 't-id' || key === 'doc-id' || key === 'q-id') continue;
+          var val = draft.fields[key];
+          if (val && val !== '0' && val !== 'activo' && val !== 'Prospecto' && val !== '-1' && val !== '30' && val !== 'pendiente' && val !== 'solicitado' && val !== 'media' && val !== 'medio') {
+            hasContent = true;
+            break;
+          }
+        }
+
+        if (!hasContent) return;
+
+        var modalEl = backdrop.querySelector('.modal');
+        if (!modalEl) return;
+
+        var mh = modalEl.querySelector('.mh');
+        if (!mh) return;
+
+        var banner = document.createElement('div');
+        banner.className = 'draft-banner';
+        banner.id = 'draft-banner-' + modalId;
+        banner.style.cssText = 'background: rgba(15, 184, 160, 0.08); border: 1px dashed var(--teal); padding: 8px 12px; display: flex; align-items: center; justify-content: space-between; font-size: 13px; gap: 10px; margin: 10px 0; border-radius: 6px; width: 100%; box-sizing: border-box;';
+        banner.innerHTML = `
+          <span style="color: var(--teal); display: flex; align-items: center; gap: 6px; font-weight: 500;">
+            ⚡ Tienes un borrador sin guardar.
+          </span>
+          <div style="display: flex; gap: 6px;">
+            <button class="btn btn-primary" onclick="restoreModalDraft('${modalId}')" style="padding: 3px 8px; font-size: 11px; background: var(--teal); border: none; height: 26px; line-height: 1; border-radius: 4px;">Restaurar</button>
+            <button class="btn btn-ghost" onclick="clearModalDraft('${modalId}')" style="padding: 3px 8px; font-size: 11px; border: 1px solid rgba(255,255,255,0.15); color: var(--tx2); height: 26px; line-height: 1; border-radius: 4px; background: transparent;">Descartar</button>
+          </div>
+        `;
+
+        // Insert directly below the header element (.mh)
+        mh.parentNode.insertBefore(banner, mh.nextSibling);
+      } catch (err) {
+        console.warn("Error parsing or loading draft banner:", err);
+      }
+    };
+
+    window.restoreModalDraft = function(modalId) {
+      var backdrop = document.getElementById(modalId);
+      if (!backdrop) return;
+
+      var draftStr = localStorage.getItem('draft_' + modalId);
+      if (!draftStr) return;
+
+      try {
+        var draft = JSON.parse(draftStr);
+        if (!draft || !draft.fields) return;
+
+        for (var key in draft.fields) {
+          var el = document.getElementById(key);
+          if (el) {
+            el.value = draft.fields[key];
+          }
+        }
+
+        // Hide the banner
+        var banner = document.getElementById('draft-banner-' + modalId);
+        if (banner) banner.remove();
+      } catch (err) {
+        console.warn("Error restoring draft:", err);
+      }
+    };
+
+    window.clearModalDraft = function(modalId) {
+      localStorage.removeItem('draft_' + modalId);
+      var banner = document.getElementById('draft-banner-' + modalId);
+      if (banner) banner.remove();
+    };
+
+    window.clearActiveModalDraft = function() {
+      var openBackdrop = document.querySelector('.backdrop.open');
+      if (openBackdrop && openBackdrop.id) {
+        window.clearModalDraft(openBackdrop.id);
+      }
+    };
+  })();
 
 </script>
 </body>
