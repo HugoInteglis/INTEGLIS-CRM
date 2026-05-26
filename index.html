@@ -258,6 +258,10 @@ textarea{resize:vertical;min-height:75px;line-height:1.5}
     <button class="nav-btn" id="nav-analytics" onclick="show('analytics')">Análisis</button>
   </nav>
   <div class="topbar-right" style="display:flex; align-items:center; gap:8px;">
+    <span id="cloud-sync-badge" style="display:flex; align-items:center; gap:5px; font-size:11px; color:rgba(255,255,255,0.7); background:rgba(255,255,255,0.06); padding:4px 8px; border-radius:12px; font-weight:500;">
+      <span style="width:6px; height:6px; background:#e24b4a; border-radius:50%; display:inline-block;" id="cloud-sync-dot"></span>
+      <span id="cloud-sync-text">Cargando Nube...</span>
+    </span>
     <button class="btn btn-primary btn-sm" onclick="openClientModal(null)">+ Nuevo cliente</button>
     <button class="btn btn-ghost btn-sm" onclick="logout()" style="color:#fff; border-color:rgba(255,255,255,0.25); background:rgba(255,255,255,0.06); font-weight:400;">Cerrar sesión</button>
   </div>
@@ -3294,6 +3298,368 @@ window.addEventListener('resize', adjustPreviewScale);
 
 // INIT
 checkAuth();
+</script>
+
+<script type="module">
+  import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js';
+  import { getAuth, signOut, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signInAnonymously } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js';
+  import { getFirestore, collection, doc, setDoc, deleteDoc, onSnapshot, query, where } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
+
+  const firebaseConfig = {
+    projectId: "gen-lang-client-0810464358",
+    appId: "1:555960324764:web:01f956a85eceb7ad2ad359",
+    apiKey: "AIzaSyC02dtsXtQbeWzWsAn28h-ppC_TkEwIXRc",
+    authDomain: "gen-lang-client-0810464358.firebaseapp.com",
+    firestoreDatabaseId: "ai-studio-641468bf-cde7-43f3-b945-49a70e1dd647",
+    storageBucket: "gen-lang-client-0810464358.firebasestorage.app",
+    messagingSenderId: "555960324764",
+    measurementId: ""
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
+  const auth = getAuth(app);
+
+  const COLLECTIONS = ['clients', 'deals', 'quotes', 'docs', 'tasks', 'trash'];
+  window.firestoreCache = {};
+  window.loadedCollections = {};
+  window.unsubscribes = [];
+  window.isSavingToFirebase = false;
+
+  const originalCheckAuth = window.checkAuth;
+  const originalSaveDB = window.saveDB;
+
+  function handleFirestoreError(error, operationType, path) {
+    const errInfo = {
+      error: error instanceof Error ? error.message : String(error),
+      authInfo: {
+        userId: auth.currentUser ? auth.currentUser.uid : null,
+        email: auth.currentUser ? auth.currentUser.email : null,
+        emailVerified: auth.currentUser ? auth.currentUser.emailVerified : null,
+        isAnonymous: auth.currentUser ? auth.currentUser.isAnonymous : null,
+      },
+      operationType,
+      path
+    };
+    console.error('Firestore Error details: ', JSON.stringify(errInfo));
+    throw new Error(JSON.stringify(errInfo));
+  }
+
+  function allCollectionsLoaded() {
+    return COLLECTIONS.every(key => window.loadedCollections[key] === true);
+  }
+
+  function isFirestoreEmpty() {
+    return COLLECTIONS.every(key => !window.firestoreCache[key] || window.firestoreCache[key].length === 0);
+  }
+
+  function hasLocalCacheData() {
+    try {
+      const localStr = localStorage.getItem('integlis_crm4');
+      if (localStr) {
+        const parsed = JSON.parse(localStr);
+        return (parsed.clients && parsed.clients.length > 0) || 
+               (parsed.deals && parsed.deals.length > 0) ||
+               (parsed.quotes && parsed.quotes.length > 0) ||
+               (parsed.docs && parsed.docs.length > 0) ||
+               (parsed.tasks && parsed.tasks.length > 0);
+      }
+    } catch(e) {}
+    return false;
+  }
+
+  async function bootstrapLocalDataToCloud() {
+    console.log("Blank cloud project database detected. Syncing existing local client data...");
+    const syncText = document.getElementById('cloud-sync-text');
+    const syncDot = document.getElementById('cloud-sync-dot');
+    if (syncText) syncText.textContent = 'Subiendo datos...';
+    if (syncDot) syncDot.style.backgroundColor = '#F5A623';
+    window.isSavingToFirebase = true;
+
+    try {
+      const localStr = localStorage.getItem('integlis_crm4');
+      if (localStr) {
+        const parsed = JSON.parse(localStr);
+        for (const key of COLLECTIONS) {
+          const list = parsed[key] || [];
+          for (const item of list) {
+            if (!item.id) continue;
+            const docRef = doc(db, key, item.id);
+            const cloned = { ...item, ownerId: auth.currentUser.uid };
+            await setDoc(docRef, cloned);
+          }
+        }
+      }
+    } catch(err) {
+      console.error("Bootstrapping failed:", err);
+    } finally {
+      window.isSavingToFirebase = false;
+      if (syncText) syncText.textContent = 'Sincronizado';
+      if (syncDot) syncDot.style.backgroundColor = '#0FB8A0';
+      if (typeof window.renderAllViews === 'function') {
+        window.renderAllViews();
+      }
+    }
+  }
+
+  // Override checkAuth to block rendering until Firestore lists are loaded
+  window.checkAuth = function() {
+    const isAuth = sessionStorage.getItem('integlis_crm_auth') === 'true';
+    const loginEl = document.getElementById('login-container');
+    const appEl = document.getElementById('crm-app');
+
+    if (isAuth) {
+      if (loginEl) loginEl.style.display = 'none';
+      if (appEl) appEl.style.display = 'block';
+
+      if (window.firebaseDisabled) {
+        const syncText = document.getElementById('cloud-sync-text');
+        const syncDot = document.getElementById('cloud-sync-dot');
+        if (syncText) syncText.textContent = 'Modo Local';
+        if (syncDot) syncDot.style.backgroundColor = '#f1c40f';
+
+        if (typeof window.renderAllViews === 'function') {
+          window.renderAllViews();
+        }
+      } else if (auth.currentUser) {
+        if (allCollectionsLoaded()) {
+          if (typeof window.renderAllViews === 'function') {
+            window.renderAllViews();
+          }
+        }
+      } else {
+        // Local session is active but Firebase Auth is loading. Show the CRM container to prevent screen blinking
+        console.log("Sesión activa localmente, esperando conexión o funcionando local...");
+        if (typeof window.renderAllViews === 'function') {
+          window.renderAllViews();
+        }
+      }
+    } else {
+      if (loginEl) loginEl.style.display = 'flex';
+      if (appEl) appEl.style.display = 'none';
+    }
+  };
+
+  // Override saveDB to sync to Firestore differentially
+  window.saveDB = async function() {
+    if (originalSaveDB) originalSaveDB();
+
+    if (window.firebaseDisabled || !auth.currentUser) return;
+    if (window.isSavingToFirebase) return;
+
+    window.isSavingToFirebase = true;
+    const syncText = document.getElementById('cloud-sync-text');
+    const syncDot = document.getElementById('cloud-sync-dot');
+    if (syncText) syncText.textContent = 'Sincronizando...';
+    if (syncDot) syncDot.style.backgroundColor = '#F5A623';
+
+    try {
+      const uid = auth.currentUser.uid;
+      for (const key of COLLECTIONS) {
+        const localList = window.db[key] || [];
+        const cacheList = window.firestoreCache[key] || [];
+
+        // Save new and updated
+        for (const item of localList) {
+          if (!item.id) continue;
+          const cachedItem = cacheList.find(c => c.id === item.id);
+          const itemStr = JSON.stringify(item);
+          const cachedStr = cachedItem ? JSON.stringify(cachedItem) : null;
+
+          if (!cachedItem || itemStr !== cachedStr) {
+            const docRef = doc(db, key, item.id);
+            const clonedObj = JSON.parse(itemStr);
+            clonedObj.ownerId = uid;
+            try {
+              await setDoc(docRef, clonedObj);
+            } catch(e) {
+              handleFirestoreError(e, 'write', `${key}/${item.id}`);
+            }
+          }
+        }
+
+        // Delete removed
+        for (const cachedItem of cacheList) {
+          if (!cachedItem.id) continue;
+          const localExists = localList.some(l => l.id === cachedItem.id);
+          if (!localExists) {
+            const docRef = doc(db, key, cachedItem.id);
+            try {
+              await deleteDoc(docRef);
+            } catch(e) {
+              handleFirestoreError(e, 'delete', `${key}/${cachedItem.id}`);
+            }
+          }
+        }
+
+        window.firestoreCache[key] = JSON.parse(JSON.stringify(localList));
+      }
+
+      if (syncText) syncText.textContent = 'Sincronizado';
+      if (syncDot) syncDot.style.backgroundColor = '#0FB8A0';
+    } catch(err) {
+      console.error("Firestore sync save failed:", err);
+      if (syncText) syncText.textContent = 'Error Sincronizando';
+      if (syncDot) syncDot.style.backgroundColor = '#e24b4a';
+    } finally {
+      window.isSavingToFirebase = false;
+    }
+  };
+
+  // Hook login submit button fallback
+  window.handleLogin = async function(e) {
+    if (e) e.preventDefault();
+    const email = document.getElementById('login-email').value.trim();
+    const pass = document.getElementById('login-password').value;
+    const errEl = document.getElementById('login-error');
+    const submitBtn = document.querySelector('.login-container .login-btn');
+
+    if (submitBtn) {
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Iniciando sesión...';
+    }
+
+    if (email === 'hugo@integlis.com' && pass === 'Tikisate2310@') {
+      try {
+        try {
+          await signInWithEmailAndPassword(auth, email, pass);
+        } catch(subErr) {
+          console.warn("Sign-in failed. Attempting to register on Firebase Auth:", subErr.message);
+          if (subErr.code === 'auth/user-not-found' || subErr.code === 'auth/invalid-credential') {
+            try {
+              await createUserWithEmailAndPassword(auth, email, pass);
+            } catch (regErr) {
+              console.warn("Auto-register failed, falling back to anonymous session:", regErr.message);
+              await signInAnonymously(auth);
+            }
+          } else {
+            console.warn("Other login error, falling back to anonymous session:", subErr.message);
+            await signInAnonymously(auth);
+          }
+        }
+        sessionStorage.setItem('integlis_crm_auth', 'true');
+        if (errEl) errEl.style.display = 'none';
+        window.checkAuth();
+      } catch(err) {
+        console.warn("Firebase Auth is restricted/disabled, logging in locally:", err.message);
+        window.firebaseDisabled = true;
+        sessionStorage.setItem('integlis_crm_auth', 'true');
+        if (errEl) errEl.style.display = 'none';
+        
+        const syncText = document.getElementById('cloud-sync-text');
+        const syncDot = document.getElementById('cloud-sync-dot');
+        if (syncText) syncText.textContent = 'Modo Local';
+        if (syncDot) syncDot.style.backgroundColor = '#f1c40f';
+
+        window.checkAuth();
+      } finally {
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Iniciar Sesión';
+        }
+      }
+    } else {
+      if (errEl) {
+        errEl.textContent = 'El correo o contraseña ingresados son incorrectos.';
+        errEl.style.display = 'block';
+      }
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Iniciar Sesión';
+      }
+    }
+  };
+
+  // Expose logout
+  window.logout = function() {
+    signOut(auth).then(() => {
+      sessionStorage.removeItem('integlis_crm_auth');
+      location.reload();
+    }).catch(err => {
+      console.error("Sign out failed", err);
+    });
+  };
+
+  // Manage Auth State Transitions
+  onAuthStateChanged(auth, async (user) => {
+    const syncText = document.getElementById('cloud-sync-text');
+    const syncDot = document.getElementById('cloud-sync-dot');
+    const isAuth = sessionStorage.getItem('integlis_crm_auth') === 'true';
+
+    if (user) {
+      console.log("Authenticated as user:", user.email || 'Anonymous');
+      window.fbUser = user;
+      sessionStorage.setItem('integlis_crm_auth', 'true');
+
+      // Setup real-time listeners for the 6 collections
+      if (window.unsubscribes.length > 0) {
+        window.unsubscribes.forEach(un => un());
+        window.unsubscribes = [];
+      }
+
+      COLLECTIONS.forEach(key => {
+        const q = query(collection(db, key), where("ownerId", "==", user.uid));
+        const unsub = onSnapshot(q, (snapshot) => {
+          const fetchedList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+          window.firestoreCache[key] = JSON.parse(JSON.stringify(fetchedList));
+
+          if (!window.isSavingToFirebase) {
+            window.db[key] = fetchedList;
+            localStorage.setItem('integlis_crm4', JSON.stringify(window.db));
+            
+            window.loadedCollections[key] = true;
+            if (allCollectionsLoaded()) {
+              if (syncText) syncText.textContent = 'Sincronizado';
+              if (syncDot) syncDot.style.backgroundColor = '#0FB8A0';
+
+              if (isFirestoreEmpty() && hasLocalCacheData()) {
+                bootstrapLocalDataToCloud();
+              } else {
+                if (typeof window.renderAllViews === 'function') {
+                  window.renderAllViews();
+                }
+              }
+            }
+          }
+        }, (err) => {
+          handleFirestoreError(err, 'get', key);
+        });
+        window.unsubscribes.push(unsub);
+      });
+
+      window.checkAuth();
+    } else if (isAuth) {
+      console.log("Local session is active but Firebase Auth is empty. Executing silent sync login...");
+      try {
+        await signInWithEmailAndPassword(auth, 'hugo@integlis.com', 'Tikisate2310@');
+      } catch (e2) {
+        console.warn("Silent background login failed:", e2.message);
+        window.firebaseDisabled = true;
+        const syncText = document.getElementById('cloud-sync-text');
+        const syncDot = document.getElementById('cloud-sync-dot');
+        if (syncText) syncText.textContent = 'Modo Local';
+        if (syncDot) syncDot.style.backgroundColor = '#f1c40f';
+        window.checkAuth();
+      }
+    } else {
+      console.log("User signed out");
+      window.fbUser = null;
+      sessionStorage.setItem('integlis_crm_auth', 'false');
+      
+      if (window.unsubscribes.length > 0) {
+        window.unsubscribes.forEach(un => un());
+        window.unsubscribes = [];
+      }
+      COLLECTIONS.forEach(key => {
+        window.loadedCollections[key] = false;
+      });
+
+      if (syncText) syncText.textContent = 'Sin Sesión';
+      if (syncDot) syncDot.style.backgroundColor = '#888780';
+
+      window.checkAuth();
+    }
+  });
 </script>
 </body>
 </html>

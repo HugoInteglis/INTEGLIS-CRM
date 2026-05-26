@@ -1,0 +1,144 @@
+{
+  "entities": {
+    "Client": {
+      "title": "Client",
+      "description": "Represents a customer with potential or existing services",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "ownerId": { "type": "string" },
+        "name": { "type": "string" },
+        "company": { "type": "string" },
+        "email": { "type": "string" },
+        "phone": { "type": "string" },
+        "status": { "type": "string" },
+        "notes": { "type": "string" },
+        "contractedServices": {
+          "type": "array",
+          "description": "Active subscriptions or products purchased by this client"
+        }
+      },
+      "required": ["id", "ownerId", "name"]
+    },
+    "Deal": {
+      "title": "Deal",
+      "description": "A sales opportunity in the visual pipeline",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "ownerId": { "type": "string" },
+        "clientId": { "type": "string" },
+        "title": { "type": "string" },
+        "value": { "type": "number" },
+        "stage": { "type": "string" },
+        "dueDate": { "type": "string" },
+        "notes": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["id", "ownerId", "clientId", "title", "stage"]
+    },
+    "Quote": {
+      "title": "Quote",
+      "description": "A commercial proposal/cotización document with items and amounts",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "ownerId": { "type": "string" },
+        "clientId": { "type": "string" },
+        "number": { "type": "number" },
+        "clientName": { "type": "string" },
+        "clientNit": { "type": "string" },
+        "date": { "type": "string" },
+        "validity": { "type": "number" },
+        "items": { "type": "array" },
+        "discountValue": { "type": "number" },
+        "discountType": { "type": "string" },
+        "applyIva": { "type": "string" },
+        "delivery": { "type": "string" },
+        "duration": { "type": "string" },
+        "notes": { "type": "string" },
+        "terms": { "type": "string" },
+        "subtotal": { "type": "number" },
+        "discount": { "type": "number" },
+        "iva": { "type": "number" },
+        "total": { "type": "number" }
+      },
+      "required": ["id", "ownerId", "clientId", "number", "total"]
+    },
+    "Doc": {
+      "title": "Doc",
+      "description": "Financial records, invoices, or uploaded contracts",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "ownerId": { "type": "string" },
+        "clientId": { "type": "string" },
+        "name": { "type": "string" },
+        "type": { "type": "string" },
+        "amount": { "type": "number" },
+        "date": { "type": "string" },
+        "status": { "type": "string" },
+        "notes": { "type": "string" }
+      },
+      "required": ["id", "ownerId", "clientId", "name", "type", "amount"]
+    },
+    "Task": {
+      "title": "Task",
+      "description": "A scheduled todo/action item related to a client",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "ownerId": { "type": "string" },
+        "clientId": { "type": "string" },
+        "title": { "type": "string" },
+        "due": { "type": "string" },
+        "priority": { "type": "string" },
+        "category": { "type": "string" },
+        "notes": { "type": "string" },
+        "done": { "type": "boolean" }
+      },
+      "required": ["id", "ownerId", "clientId", "title", "done"]
+    },
+    "Trash": {
+      "title": "Trash",
+      "description": "Safeguarded soft-deleted records supporting restore logic",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "ownerId": { "type": "string" },
+        "type": { "type": "string" },
+        "deletedAt": { "type": "number" },
+        "data": { "type": "object" },
+        "cascadeFromClient": { "type": "string" }
+      },
+      "required": ["id", "ownerId", "type", "deletedAt", "data"]
+    }
+  },
+  "firestore": {
+    "clients": {
+      "schema": "Client",
+      "description": "Active customers list"
+    },
+    "deals": {
+      "schema": "Deal",
+      "description": "Sales opportunities pipeline"
+    },
+    "quotes": {
+      "schema": "Quote",
+      "description": "Issued quotations and estimates"
+    },
+    "docs": {
+      "schema": "Doc",
+      "description": "Financial and transaction documents"
+    },
+    "tasks": {
+      "schema": "Task",
+      "description": "Schedules and meetings"
+    },
+    "trash": {
+      "schema": "Trash",
+      "description": "Soft deleted archive"
+    }
+  }
+}

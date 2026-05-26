@@ -1,0 +1,159 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Global Safety Net default-deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Reuseable primitives
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(data) {
+      return data.ownerId == request.auth.uid;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // Entity validation validators (Only checks static schema details to support both create and update checks)
+    function isValidClient(c) {
+      return c.id is string && c.id.size() >= 2 && c.id.size() <= 128
+        && c.ownerId is string && c.ownerId == request.auth.uid
+        && c.name is string && c.name.size() >= 1 && c.name.size() <= 200
+        && (c.company == null || (c.company is string && c.company.size() <= 200))
+        && (c.email == null || (c.email is string && c.email.size() <= 200))
+        && (c.phone == null || (c.phone is string && c.phone.size() <= 100))
+        && (c.status == null || (c.status is string && c.status.size() <= 100))
+        && (c.notes == null || (c.notes is string && c.notes.size() <= 5000));
+    }
+
+    function isValidDeal(d) {
+      return d.id is string && d.id.size() >= 2 && d.id.size() <= 128
+        && d.ownerId is string && d.ownerId == request.auth.uid
+        && d.clientId is string && d.clientId.size() >= 2 && d.clientId.size() <= 128
+        && d.title is string && d.title.size() >= 1 && d.title.size() <= 300
+        && d.stage is string && d.stage.size() >= 1 && d.stage.size() <= 100
+        && d.value is number && d.value >= 0
+        && (d.dueDate == null || (d.dueDate is string && d.dueDate.size() <= 50))
+        && (d.notes == null || (d.notes is string && d.notes.size() <= 10000));
+    }
+
+    function isValidQuote(q) {
+      return q.id is string && q.id.size() >= 2 && q.id.size() <= 128
+        && q.ownerId is string && q.ownerId == request.auth.uid
+        && q.clientId is string && q.clientId.size() >= 2 && q.clientId.size() <= 128
+        && q.number is number && q.number >= 0
+        && q.total is number && q.total >= 0
+        && (q.clientName == null || (q.clientName is string && q.clientName.size() <= 200))
+        && (q.clientNit == null || (q.clientNit is string && q.clientNit.size() <= 100))
+        && (q.date == null || (q.date is string && q.date.size() <= 50))
+        && (q.validity == null || q.validity is number)
+        && (q.discountValue == null || q.discountValue is number)
+        && (q.discountType == null || (q.discountType is string && q.discountType.size() <= 50))
+        && (q.applyIva == null || (q.applyIva is string && q.applyIva.size() <= 50))
+        && (q.delivery == null || (q.delivery is string && q.delivery.size() <= 300))
+        && (q.duration == null || (q.duration is string && q.duration.size() <= 300))
+        && (q.notes == null || (q.notes is string && q.notes.size() <= 10000))
+        && (q.terms == null || (q.terms is string && q.terms.size() <= 10000));
+    }
+
+    function isValidDoc(o) {
+      return o.id is string && o.id.size() >= 2 && o.id.size() <= 128
+        && o.ownerId is string && o.ownerId == request.auth.uid
+        && o.clientId is string && o.clientId.size() >= 2 && o.clientId.size() <= 128
+        && o.name is string && o.name.size() >= 1 && o.name.size() <= 300
+        && o.type is string && o.type.size() >= 1 && o.type.size() <= 100
+        && o.amount is number && o.amount >= 0
+        && (o.date == null || (o.date is string && o.date.size() <= 50))
+        && (o.status == null || (o.status is string && o.status.size() <= 100))
+        && (o.notes == null || (o.notes is string && o.notes.size() <= 10000));
+    }
+
+    function isValidTask(t) {
+      return t.id is string && t.id.size() >= 2 && t.id.size() <= 128
+        && t.ownerId is string && t.ownerId == request.auth.uid
+        && t.clientId is string && t.clientId.size() >= 2 && t.clientId.size() <= 128
+        && t.title is string && t.title.size() >= 1 && t.title.size() <= 500
+        && t.done is bool
+        && (t.due == null || (t.due is string && t.due.size() <= 50))
+        && (t.priority == null || (t.priority is string && t.priority.size() <= 50))
+        && (t.category == null || (t.category is string && t.category.size() <= 100))
+        && (t.notes == null || (t.notes is string && t.notes.size() <= 10000));
+    }
+
+    function isValidTrash(r) {
+      return r.id is string && r.id.size() >= 2 && r.id.size() <= 128
+        && r.ownerId is string && r.ownerId == request.auth.uid
+        && r.type is string && r.type.size() >= 1 && r.type.size() <= 100
+        && r.deletedAt is number
+        && r.data is map;
+    }
+
+    // Clients Collection Rules
+    match /clients/{clientId} {
+      allow get: if isSignedIn() && isOwner(existing());
+      allow list: if isSignedIn() && existing().ownerId == request.auth.uid;
+      allow create: if isSignedIn() && isValidId(clientId) && isValidClient(incoming()) && isOwner(incoming());
+      allow update: if isSignedIn() && isValidClient(incoming()) && isOwner(existing()) && incoming().ownerId == existing().ownerId;
+      allow delete: if isSignedIn() && isOwner(existing());
+    }
+
+    // Deals Collection Rules
+    match /deals/{dealId} {
+      allow get: if isSignedIn() && isOwner(existing());
+      allow list: if isSignedIn() && existing().ownerId == request.auth.uid;
+      allow create: if isSignedIn() && isValidId(dealId) && isValidDeal(incoming()) && isOwner(incoming());
+      allow update: if isSignedIn() && isValidDeal(incoming()) && isOwner(existing()) && incoming().ownerId == existing().ownerId;
+      allow delete: if isSignedIn() && isOwner(existing());
+    }
+
+    // Quotes Collection Rules
+    match /quotes/{quoteId} {
+      allow get: if isSignedIn() && isOwner(existing());
+      allow list: if isSignedIn() && existing().ownerId == request.auth.uid;
+      allow create: if isSignedIn() && isValidId(quoteId) && isValidQuote(incoming()) && isOwner(incoming());
+      allow update: if isSignedIn() && isValidQuote(incoming()) && isOwner(existing()) && incoming().ownerId == existing().ownerId;
+      allow delete: if isSignedIn() && isOwner(existing());
+    }
+
+    // Docs Collection Rules
+    match /docs/{docId} {
+      allow get: if isSignedIn() && isOwner(existing());
+      allow list: if isSignedIn() && existing().ownerId == request.auth.uid;
+      allow create: if isSignedIn() && isValidId(docId) && isValidDoc(incoming()) && isOwner(incoming());
+      allow update: if isSignedIn() && isValidDoc(incoming()) && isOwner(existing()) && incoming().ownerId == existing().ownerId;
+      allow delete: if isSignedIn() && isOwner(existing());
+    }
+
+    // Tasks Collection Rules
+    match /tasks/{taskId} {
+      allow get: if isSignedIn() && isOwner(existing());
+      allow list: if isSignedIn() && existing().ownerId == request.auth.uid;
+      allow create: if isSignedIn() && isValidId(taskId) && isValidTask(incoming()) && isOwner(incoming());
+      allow update: if isSignedIn() && isValidTask(incoming()) && isOwner(existing()) && incoming().ownerId == existing().ownerId;
+      allow delete: if isSignedIn() && isOwner(existing());
+    }
+
+    // Trash Collection Rules
+    match /trash/{trashId} {
+      allow get: if isSignedIn() && isOwner(existing());
+      allow list: if isSignedIn() && existing().ownerId == request.auth.uid;
+      allow create: if isSignedIn() && isValidId(trashId) && isValidTrash(incoming()) && isOwner(incoming());
+      allow update: if isSignedIn() && isValidTrash(incoming()) && isOwner(existing()) && incoming().ownerId == existing().ownerId;
+      allow delete: if isSignedIn() && isOwner(existing());
+    }
+  }
+}
