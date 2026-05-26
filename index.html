@@ -303,7 +303,7 @@ textarea{resize:vertical;min-height:75px;line-height:1.5}
     <div class="card"><div class="ct">Clientes recientes <button class="btn btn-ghost btn-sm" onclick="show('clients')">Ver todo</button></div><div id="dash-clients"></div></div>
   </div>
   <div class="grid-2col">
-    <div class="card"><div class="ct">Tareas pendientes <button class="btn btn-ghost btn-sm" onclick="show('tasks')">Ver todo</button></div><div id="dash-tasks"></div></div>
+    <div class="card"><div class="ct" style="display:flex; justify-content:space-between; align-items:center;">Tareas pendientes <div style="display:flex; gap:6px;"><button class="btn btn-ghost btn-sm" onclick="openQuickTasksModal()" style="color:var(--amber); border-color:rgba(245,158,11,0.25);">⚡ Abrir en Popup</button><button class="btn btn-ghost btn-sm" onclick="show('tasks')">Ver todo</button></div></div><div id="dash-tasks"></div></div>
     <div class="card"><div class="ct">Documentos recientes <button class="btn btn-ghost btn-sm" onclick="show('finance')">Ver todo</button></div><div id="dash-docs"></div></div>
   </div>
 </div>
@@ -806,6 +806,20 @@ textarea{resize:vertical;min-height:75px;line-height:1.5}
           <select id="t-cat"><option value="seguimiento">Seguimiento</option><option value="propuesta">Propuesta</option><option value="reunion">Reunión</option><option value="admin">Administración</option><option value="otro">Otro</option></select>
         </div>
       </div>
+      <div class="fr" style="margin-top: 10px;">
+        <div class="fg">
+          <label class="fl">Acción de seguimiento / Canal</label>
+          <select id="t-action">
+            <option value="ninguna" selected>Ninguna / Otro</option>
+            <option value="llamar">📞 Llamada telefónica</option>
+            <option value="correo">📧 Correo electrónico</option>
+            <option value="linkedin">💬 Mensaje de LinkedIn</option>
+            <option value="whatsapp">🟢 Mensaje de WhatsApp</option>
+            <option value="reunion">👥 Reunión (Virtual/Presencial)</option>
+            <option value="propuesta">✍️ Enviar propuesta/cotización</option>
+          </select>
+        </div>
+      </div>
       <div class="fg"><label class="fl">Notas</label><textarea id="t-notes" placeholder="Detalles adicionales..."></textarea></div>
       <input type="hidden" id="t-id">
     </div>
@@ -813,6 +827,29 @@ textarea{resize:vertical;min-height:75px;line-height:1.5}
       <button class="btn btn-ghost" onclick="mClose('m-task')">Cancelar</button>
       <button class="btn btn-danger btn-sm" id="t-del-btn" style="margin-right:auto;display:none" onclick="delTask()">Eliminar</button>
       <button class="btn btn-primary" onclick="saveTask()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: PENDING QUICK TASKS -->
+<div class="backdrop" id="m-quick-tasks" style="z-index: 300;" onclick="bgClose(event,'m-quick-tasks')">
+  <div class="modal" style="max-width: 650px; width: 90%; max-height: 85vh; display: flex; flex-direction: column; overflow: hidden; padding: 0;">
+    <div class="mh" style="padding: 18px 24px; border-bottom: 1px solid var(--br); flex-shrink: 0;">
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <span style="font-size: 20px;">⏱️</span>
+        <span class="mt2" style="font-weight: 700; font-size: 18px; letter-spacing: -0.02em; margin: 0;">Tareas Pendientes de Seguimiento</span>
+      </div>
+      <button class="cbtn" onclick="mClose('m-quick-tasks')">&#10005;</button>
+    </div>
+    <div class="mb2" style="overflow-y: auto; flex: 1; padding: 20px 24px; display: flex; flex-direction: column; gap: 12px; margin: 0;" id="quick-tasks-list">
+      <!-- Populated dynamically -->
+    </div>
+    <div class="mf" style="border-top: 1px solid var(--br); padding: 16px 24px; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;">
+      <button class="btn btn-ghost" onclick="mClose('m-quick-tasks')">Cerrar</button>
+      <div style="display:flex; gap:8px;">
+        <button class="btn btn-ghost btn-sm" onclick="mClose('m-quick-tasks'); openTaskModal(null,null)">+ Nueva tarea</button>
+        <button class="btn btn-primary btn-sm" onclick="mClose('m-quick-tasks'); show('tasks')" style="background:var(--purple); border-color:var(--purple);">Ver sección de Tareas</button>
+      </div>
     </div>
   </div>
 </div>
@@ -1038,12 +1075,21 @@ function renderDash() {
     {l:'Clientes activos', v:activeClients.length, c:'var(--teal)'},
     {l:'Pipeline total', v:Q(openVal), c:'var(--amber)'},
     {l:'Ingresos cerrados', v:Q(wonVal), c:'var(--teal)'},
-    {l:'Tareas pendientes', v:pendingTasks.length, c:'var(--amber)'},
+    {l:'Tareas pendientes', v:pendingTasks.length, c:'var(--amber)', click: 'openQuickTasksModal()'},
     {l:'Docs pendientes', v:pendingDocs.length, c:'#e24b4a'}
   ];
   var mHtml = '';
   for (var i = 0; i < metrics.length; i++) {
-    mHtml += '<div class="mc"><div class="ml">' + metrics[i].l + '</div><div class="mv" style="color:' + metrics[i].c + '">' + metrics[i].v + '</div></div>';
+    var item = metrics[i];
+    if (item.click) {
+      mHtml += '<div class="mc" onclick="' + item.click + '" style="cursor:pointer; transition: transform 0.15s, border-color 0.15s, box-shadow 0.15s; border-color: rgba(245,158,11,0.25);" onmouseover="this.style.transform=\'translateY(-2px)\'; this.style.borderColor=\'var(--amber)\'; this.style.boxShadow=\'0 4px 12px rgba(245,158,11,0.08)\'" onmouseout="this.style.transform=\'none\'; this.style.borderColor=\'var(--br)\'; this.style.boxShadow=\'none\'">'
+        + '<div class="ml" style="display:flex; align-items:center; justify-content:center; gap:5px;">' + item.l + ' ⚡</div>'
+        + '<div class="mv" style="color:' + item.c + '">' + item.v + '</div>'
+        + '<div style="font-size:10px; color:var(--tx3); margin-top:2px;">(Clic para abrir rápido)</div>'
+        + '</div>';
+    } else {
+      mHtml += '<div class="mc"><div class="ml">' + item.l + '</div><div class="mv" style="color:' + item.c + '">' + item.v + '</div></div>';
+    }
   }
   document.getElementById('metrics').innerHTML = mHtml;
 
@@ -1179,6 +1225,11 @@ function renderDash() {
     }
   } else { ddoHtml = '<div class="empty" style="padding:1.5rem">Sin documentos</div>'; }
   document.getElementById('dash-docs').innerHTML = ddoHtml;
+
+  var qtModal = document.getElementById('m-quick-tasks');
+  if (qtModal && qtModal.classList.contains('open')) {
+    renderQuickTasks();
+  }
 }
 
 // PIPELINE
@@ -2704,6 +2755,21 @@ function taskRow(t, compact) {
   var tod = isToday(t.due) && !t.done;
   var dueClass = od ? 'overdue' : tod ? 'today' : '';
   var dueColor = od ? '#e24b4a' : tod ? 'var(--amber)' : 'var(--tx2)';
+  
+  var actionHtml = '';
+  if (t.action && t.action !== 'ninguna') {
+    var actLabels = {
+      llamar: '📞 Llamada',
+      correo: '📧 Correo',
+      linkedin: '💬 LinkedIn',
+      whatsapp: '🟢 WhatsApp',
+      reunion: '👥 Reunión',
+      propuesta: '✍️ Propuesta'
+    };
+    var actLabel = actLabels[t.action] || t.action;
+    actionHtml = '<span style="background:rgba(124,111,224,0.15); color:#a59bf5; padding:1px 6px; border:1px solid rgba(124,111,224,0.3); border-radius:8px; font-size:11px; font-weight:600; display:inline-flex; align-items:center;">' + actLabel + '</span>';
+  }
+
   return '<div class="task-item">'
     + '<div class="prio-dot" style="background:' + (PRIO_COLOR[t.priority]||'#888') + '"></div>'
     + '<div class="task-cb ' + (t.done?'done':'') + '" onclick="toggleTask(\'' + t.id + '\')">' + (t.done?'&#10003;':'') + '</div>'
@@ -2713,6 +2779,7 @@ function taskRow(t, compact) {
     + (t.due ? '<span class="task-due" style="color:' + dueColor + '">' + (od?'Vencida · ':tod?'Hoy · ':'') + dt(t.due) + '</span>' : '')
     + (cl ? '<span>' + cl.name + '</span>' : '')
     + (t.category ? '<span style="background:var(--sur2);padding:1px 6px;border-radius:8px;font-size:11px">' + t.category + '</span>' : '')
+    + actionHtml
     + '</div></div>'
     + '<div style="display:flex; gap:6px; align-items:center;">'
     + '<button type="button" class="bi btn-sm" onclick="event.stopPropagation(); openTaskModal(null,\'' + t.id + '\')" title="Editar tarea">&#9998;</button>'
@@ -2767,6 +2834,7 @@ function openTaskModal(clientId, taskId) {
   document.getElementById('t-due').value = t ? (t.due||'') : '';
   document.getElementById('t-priority').value = t ? (t.priority||'media') : 'media';
   document.getElementById('t-cat').value = t ? (t.category||'seguimiento') : 'seguimiento';
+  document.getElementById('t-action').value = t ? (t.action||'ninguna') : 'ninguna';
   document.getElementById('t-notes').value = t ? (t.notes||'') : '';
   document.getElementById('t-id').value = t ? t.id : '';
   document.getElementById('t-del-btn').style.display = t ? 'inline-flex' : 'none';
@@ -2791,6 +2859,7 @@ function saveTask() {
     due:document.getElementById('t-due').value,
     priority:document.getElementById('t-priority').value,
     category:document.getElementById('t-cat').value,
+    action:document.getElementById('t-action').value,
     clientId:document.getElementById('t-client').value,
     notes:document.getElementById('t-notes').value.trim(),
     done:existingDone, createdAt:new Date().toISOString()};
@@ -2844,6 +2913,43 @@ function deleteTaskDirect(id) {
     if (isDetailOpen && currentClient) openDetail(currentClient);
   });
 }
+
+function openQuickTasksModal() {
+  renderQuickTasks();
+  mOpen('m-quick-tasks');
+}
+window.openQuickTasksModal = openQuickTasksModal;
+
+function renderQuickTasks() {
+  var pending = db.tasks.filter(function(t) { return !t.done; });
+  
+  // Sort tasks chronological, overdue first
+  var tod = todayStr();
+  pending.sort(function(a, b) {
+    if (!a.due && !b.due) return 0;
+    if (!a.due) return 1;
+    if (!b.due) return -1;
+    return a.due.localeCompare(b.due);
+  });
+
+  var listEl = document.getElementById('quick-tasks-list');
+  if (!listEl) return;
+
+  if (!pending.length) {
+    listEl.innerHTML = '<div class="empty" style="padding:2.5rem 1rem; border:1px dashed var(--br); border-radius:var(--rl); text-align:center; color:var(--tx2); width:100%;">'
+      + '<span style="font-size:32px; display:block; margin-bottom:12px;">🎉</span>'
+      + '<h4 style="margin:8px 0; color:#fff; font-size:15px; font-weight:600;">¡Estás al día!</h4>'
+      + '<p style="margin:0; font-size:12.5px; color:var(--tx2);">No tienes ninguna tarea de seguimiento pendiente por el momento.</p></div>';
+    return;
+  }
+
+  var html = pending.map(function(t) {
+    return taskRow(t, false);
+  }).join('');
+
+  listEl.innerHTML = html;
+}
+window.renderQuickTasks = renderQuickTasks;
 
 // ANALYTICS
 function renderAnalytics() {
