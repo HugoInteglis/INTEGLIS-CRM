@@ -286,6 +286,17 @@ textarea{resize:vertical;min-height:75px;line-height:1.5}
     </div>
   </div>
 
+  <!-- Billing Alerts Card -->
+  <div class="card" id="dash-billing-alerts" style="margin-bottom: 1.5rem; display: none; border-color: rgba(226,75,74,0.15);">
+    <div class="ct" style="color: #fff; font-weight: 600; display: flex; align-items: center; justify-content: space-between;">
+      <span style="display:flex; align-items:center; gap:6px;">🚨 Alertas de Cobro y Facturación Recurrente</span>
+      <button class="btn btn-ghost btn-sm" onclick="show('clients')" style="font-size: 11px; padding: 4px 10px; border:1px solid rgba(255,255,255,0.1);">Gestionar Clientes</button>
+    </div>
+    <div id="dash-billing-alerts-list" style="display: flex; flex-direction: column; gap: 8px; max-height: 250px; overflow-y: auto; margin-top: 10px;">
+      <!-- Populated dynamically -->
+    </div>
+  </div>
+
   <div class="mg" id="metrics"></div>
   <div class="grid-2col" style="margin-bottom:1rem">
     <div class="card"><div class="ct">Oportunidades recientes <button class="btn btn-ghost btn-sm" onclick="show('pipeline')">Ver todo</button></div><div id="dash-deals"></div></div>
@@ -324,7 +335,7 @@ textarea{resize:vertical;min-height:75px;line-height:1.5}
       <select id="c-filter" onchange="renderClients()"><option value="">Todos</option><option value="Activo">Activos</option><option value="Prospecto">Prospectos</option><option value="Inactivo">Inactivos</option></select>
     </div>
     <div class="card" style="padding:0;overflow:hidden">
-      <table class="tbl"><thead><tr><th>Cliente</th><th>Empresa</th><th>Teléfono</th><th>Estado</th><th>Industria</th><th>Acciones</th></tr></thead>
+      <table class="tbl"><thead><tr><th>Cliente</th><th>Empresa</th><th>Teléfono</th><th>Estado</th><th>Próximo Cobro</th><th>Industria</th><th>Acciones</th></tr></thead>
       <tbody id="clients-body"></tbody></table>
     </div>
   </div>
@@ -522,6 +533,21 @@ textarea{resize:vertical;min-height:75px;line-height:1.5}
         <div class="fg"><label class="fl">Pago Recurrente Mensual (Q)</label><input id="cs-monthly-payment" type="number" value="0" min="0" placeholder="0"></div>
         <div class="fg"><label class="fl">Pago Recurrente Anual (Q)</label><input id="cs-yearly-payment" type="number" value="0" min="0" placeholder="0"></div>
       </div>
+      <div class="fr" style="margin-top: 10px;">
+        <div class="fg"><label class="fl">Fecha de Próximo Cobro</label><input id="cs-next-payment-date" type="date"></div>
+        <div class="fg">
+          <label class="fl">Aviso/Alerta de Cobro</label>
+          <select id="cs-billing-warning">
+            <option value="-1">No avisar</option>
+            <option value="0">En el día de cobro</option>
+            <option value="1">1 día antes</option>
+            <option value="3">3 días antes</option>
+            <option value="7">7 días antes</option>
+            <option value="15">15 días antes</option>
+            <option value="30" selected>30 días antes</option>
+          </select>
+        </div>
+      </div>
       <div class="fg" style="margin-top: 10px;"><label class="fl">Notas adicionales / Detalles</label><textarea id="cs-notes" placeholder="Indique alcances de hosting, accesos, periodo de pago, etc."></textarea></div>
       <input type="hidden" id="cs-id">
     </div>
@@ -561,6 +587,19 @@ textarea{resize:vertical;min-height:75px;line-height:1.5}
       <div class="fr">
         <div class="fg"><label class="fl">Valor estimado (Q)</label><input id="d-value" type="number" placeholder="8000"></div>
         <div class="fg"><label class="fl">Cierre estimado</label><input id="d-close" type="date"></div>
+      </div>
+      <div class="fr">
+        <div class="fg">
+          <label class="fl">Nivel de Interés *</label>
+          <select id="d-interest">
+            <option value="bajo">🔵 Bajo Interés</option>
+            <option value="medio" selected>🟡 Medio Interés</option>
+            <option value="alto">🔴 Alto Interés</option>
+          </select>
+        </div>
+        <div style="display: flex; align-items: flex-end; justify-content: flex-start; padding-bottom: 12px;">
+          <span style="font-size: 11px; color: var(--tx3); line-height: 1.45;">El color del nivel de interés se mostrará en el pipeline de ventas y en el dashboard.</span>
+        </div>
       </div>
       <div class="fg"><label class="fl">Notas</label><textarea id="d-notes" placeholder="Contexto de la oportunidad..."></textarea></div>
 
@@ -1008,6 +1047,76 @@ function renderDash() {
   }
   document.getElementById('metrics').innerHTML = mHtml;
 
+  // Billing alerts scan based on client subscriptions
+  var alertsHtml = '';
+  var hasAlerts = false;
+  for (var i = 0; i < db.clients.length; i++) {
+    var cl = db.clients[i];
+    var srvs = cl.contractedServices || [];
+    for (var j = 0; j < srvs.length; j++) {
+      var s = srvs[j];
+      if (s.nextPaymentDate && s.status !== 'cancelado') {
+        var nextDate = new Date(s.nextPaymentDate + 'T00:00:00');
+        var today = new Date();
+        today.setHours(0,0,0,0);
+        nextDate.setHours(0,0,0,0);
+        
+        var diffDays = Math.ceil((nextDate - today) / (1000 * 60 * 60 * 24));
+        var warningDays = s.billingWarning !== undefined ? parseInt(s.billingWarning, 10) : 30;
+        
+        var showWarning = false;
+        var urgencyClass = '';
+        var urgencyTitle = '';
+        var amt = s.monthlyPayment || s.yearlyPayment || s.initialPayment || 0;
+        var amtStr = amt ? Q(amt) : '';
+        
+        if (diffDays < 0) {
+          showWarning = true;
+          urgencyClass = 'overdue';
+          urgencyTitle = '🔴 VENCIDO (hace ' + Math.abs(diffDays) + ' días)';
+        } else if (warningDays !== -1 && diffDays <= warningDays) {
+          showWarning = true;
+          urgencyClass = 'warning';
+          urgencyTitle = '⚠️ COBRAR PRONTO (en ' + diffDays + ' días)';
+        }
+        
+        if (showWarning) {
+          hasAlerts = true;
+          var cardBg = urgencyClass === 'overdue' ? 'rgba(226,75,74,0.06)' : 'rgba(245,158,11,0.06)';
+          var cardBorder = urgencyClass === 'overdue' ? 'rgba(226,75,74,0.25)' : 'rgba(245,158,11,0.25)';
+          var badgeColor = urgencyClass === 'overdue' ? '#ff6c6c' : '#fbbf24';
+          
+          alertsHtml += '<div style="background:' + cardBg + '; border:1px solid ' + cardBorder + '; border-radius:8px; padding:12px; display:flex; justify-content:space-between; align-items:center; gap: 15px;">'
+            + '  <div>'
+            + '    <div style="font-size:11px; font-weight:700; color:' + badgeColor + '; text-transform:uppercase; letter-spacing:0.03em; margin-bottom:4px; display:flex; align-items:center; gap:6px;">'
+            + '       ' + urgencyTitle
+            + '    </div>'
+            + '    <div style="font-weight:600; font-size:13.5px; color:#fff">' + s.name + '</div>'
+            + '    <div style="font-size:12px; color:var(--tx2); margin-top:2px;">'
+            + '      Cliente: <strong style="color:var(--purple); cursor:pointer; text-decoration:underline;" onclick="openDetail(\'' + cl.id + '\')">' + cl.name + ' (' + cl.company + ')</strong>'
+            + '    </div>'
+            + '  </div>'
+            + '  <div style="text-align:right; display:flex; flex-direction:column; align-items:flex-end; gap:4px; flex-shrink:0;">'
+            + '    <div style="font-size:15px; font-weight:700; color:var(--teal)">' + amtStr + '</div>'
+            + '    <div style="font-size:11px; color:var(--tx3)">Vence: ' + dt(s.nextPaymentDate) + '</div>'
+            + '    <button class="btn btn-ghost btn-sm" onclick="openDetail(\'' + cl.id + '\')" style="padding:2px 8px; font-size:10px; height:auto; margin-top:4px; border:1px solid rgba(255,255,255,0.08);">Ver Cliente</button>'
+            + '  </div>'
+            + '</div>';
+        }
+      }
+    }
+  }
+  
+  var alertsContainer = document.getElementById('dash-billing-alerts');
+  if (alertsContainer) {
+    if (hasAlerts) {
+      alertsContainer.style.display = 'block';
+      document.getElementById('dash-billing-alerts-list').innerHTML = alertsHtml;
+    } else {
+      alertsContainer.style.display = 'none';
+    }
+  }
+
   var rd = db.deals.slice(-5).reverse();
   var ddHtml = '';
   if (rd.length) {
@@ -1015,9 +1124,25 @@ function renderDash() {
       var st = null;
       for (var j = 0; j < STAGES.length; j++) { if (STAGES[j].id === rd[i].stage) { st = STAGES[j]; break; } }
       if (!st) st = STAGES[0];
+      
+      var interestVal = rd[i].interest || 'medio';
+      var intBg = 'rgba(251,191,36,0.12)';
+      var intColor = '#fbbf24';
+      var intLabel = 'Medio';
+      if (interestVal === 'bajo') {
+        intBg = 'rgba(56,189,248,0.12)';
+        intColor = '#38bdf8';
+        intLabel = 'Bajo';
+      } else if (interestVal === 'alto') {
+        intBg = 'rgba(239,68,68,0.12)';
+        intColor = '#f87171';
+        intLabel = 'Alto';
+      }
+      var intBadge = '<span style="font-size:11px;background:' + intBg + ';color:' + intColor + ';padding:2px 8px;border-radius:12px;margin-left:5px;font-weight:500">' + intLabel + '</span>';
+
       ddHtml += '<div style="display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--br)">'
-        + '<div><div style="font-size:13px;font-weight:500">' + rd[i].title + '</div>'
-        + '<span style="font-size:11px;background:' + st.color + '20;color:' + st.color + ';padding:2px 8px;border-radius:12px">' + st.label + '</span></div>'
+        + '<div><div style="font-size:13px;font-weight:500;margin-bottom:2px">' + rd[i].title + '</div>'
+        + '<span style="font-size:11px;background:' + st.color + '20;color:' + st.color + ';padding:2px 8px;border-radius:12px">' + st.label + '</span>' + intBadge + '</div>'
         + '<div style="font-size:13px;font-weight:500;color:var(--teal)">' + Q(rd[i].value) + '</div></div>';
     }
   } else { ddHtml = '<div class="empty" style="padding:1.5rem">Sin oportunidades</div>'; }
@@ -1065,9 +1190,26 @@ function renderPipeline() {
     var cards = '';
     for (var j = 0; j < deals.length; j++) {
       var d = deals[j];
+      var interestVal = d.interest || 'medio';
+      var badgeStyle = 'font-size:10px; padding:2px 6px; border-radius:4px; font-weight:600; text-transform:uppercase; letter-spacing:0.02em;';
+      var badgeText = 'Medio';
+      if (interestVal === 'bajo') {
+        badgeStyle += 'background:rgba(56,189,248,0.12); color:#38bdf8; border:1px solid rgba(56,189,248,0.25);';
+        badgeText = 'Bajo';
+      } else if (interestVal === 'alto') {
+        badgeStyle += 'background:rgba(239,68,68,0.12); color:#f87171; border:1px solid rgba(239,68,68,0.25);';
+        badgeText = 'Alto';
+      } else {
+        badgeStyle += 'background:rgba(251,191,36,0.12); color:#fbbf24; border:1px solid rgba(251,191,36,0.25);';
+        badgeText = 'Medio';
+      }
+      
       cards += '<div class="dc" draggable="true" ondragstart="dragDeal(event, \'' + d.id + '\')" ondragend="dragEndDeal(event)" style="border-left-color:' + st.color + '" onclick="openDealModal(\'' + d.id + '\',null,null)">'
-        + '<div class="dn">' + d.title + '</div>'
-        + '<div class="dco">' + (d.clientName || '—') + '</div>'
+        + '<div style="display:flex; justify-content:space-between; align-items:flex-start; gap:8px;">'
+        + '  <div class="dn" style="margin-bottom:0;">' + d.title + '</div>'
+        + '  <span style="' + badgeStyle + ' flex-shrink:0;">' + badgeText + '</span>'
+        + '</div>'
+        + '<div class="dco" style="margin-top:4px;">' + (d.clientName || '—') + '</div>'
         + '<div class="df"><span class="dv">' + Q(d.value) + '</span><span class="dd">' + (d.closeDate ? dt(d.closeDate) : '') + '</span></div></div>';
     }
     html += '<div class="kc" ondragover="allowDropDeal(event)" ondragenter="dragEnterColumn(event, \'' + st.id + '\')" ondragleave="dragLeaveColumn(event, \'' + st.id + '\')" ondrop="dropDeal(event, \'' + st.id + '\')">'
@@ -1079,6 +1221,57 @@ function renderPipeline() {
 }
 
 // CLIENTS
+function getClientBillingStatus(c) {
+  var srvs = c.contractedServices || [];
+  var maxUrgency = -2; // -2: none, -1: future, 1: warning, 2: overdue
+  var minDays = Infinity;
+  var mostUrgentDate = '';
+  var targetSrvName = '';
+  var targetAmountStr = '';
+
+  for (var i = 0; i < srvs.length; i++) {
+    var s = srvs[i];
+    if (s.nextPaymentDate && s.status !== 'cancelado') {
+      var nextDate = new Date(s.nextPaymentDate + 'T00:00:00');
+      var today = new Date();
+      today.setHours(0,0,0,0);
+      nextDate.setHours(0,0,0,0);
+      
+      var diffDays = Math.ceil((nextDate - today) / (1000 * 60 * 60 * 24));
+      var warningDays = s.billingWarning !== undefined ? parseInt(s.billingWarning, 10) : 30;
+      var amt = s.monthlyPayment || s.yearlyPayment || s.initialPayment || 0;
+      var amtStr = amt ? Q(amt) : '';
+      
+      var urgency = -1;
+      if (diffDays < 0) {
+        urgency = 2; // Overdue
+      } else if (warningDays !== -1 && diffDays <= warningDays) {
+        urgency = 1; // Warning
+      } else {
+        urgency = 0; // Future
+      }
+      
+      if (urgency > maxUrgency || (urgency === maxUrgency && diffDays < minDays)) {
+        maxUrgency = urgency;
+        minDays = diffDays;
+        mostUrgentDate = s.nextPaymentDate;
+        targetSrvName = s.name;
+        targetAmountStr = amtStr;
+      }
+    }
+  }
+
+  if (maxUrgency === -2) return null;
+  return {
+    urgency: maxUrgency,
+    days: minDays,
+    date: mostUrgentDate,
+    srvName: targetSrvName,
+    amountStr: targetAmountStr
+  };
+}
+window.getClientBillingStatus = getClientBillingStatus;
+
 function renderClients() {
   var q = (document.getElementById('c-search').value || '').toLowerCase();
   var sf = document.getElementById('c-filter').value;
@@ -1089,17 +1282,39 @@ function renderClients() {
   document.getElementById('client-count').textContent = '(' + list.length + ')';
   var html = '';
   if (!list.length) {
-    html = '<tr><td colspan="6" style="padding:2rem;text-align:center;color:var(--tx2)">Sin clientes encontrados</td></tr>';
+    html = '<tr><td colspan="7" style="padding:2rem;text-align:center;color:var(--tx2)">Sin clientes encontrados</td></tr>';
   } else {
     for (var i = 0; i < list.length; i++) {
       var c = list[i];
       var bClass = c.status === 'Activo' ? 'ba' : c.status === 'Prospecto' ? 'bp' : 'bi2';
+      
+      var billingBadge = '<span style="color:var(--tx3); font-style:italic; font-size:12px">—</span>';
+      var billingData = getClientBillingStatus(c);
+      if (billingData) {
+        var style = 'font-size:10px; padding:3px 8px; border-radius:12px; font-weight:600; display:inline-block;';
+        if (billingData.urgency === 2) {
+          style += 'background:rgba(226,75,74,0.15); color:#ff6c6c; border:1px solid rgba(226,75,74,0.25);';
+        } else if (billingData.urgency === 1) {
+          style += 'background:rgba(245,158,11,0.15); color:#fbbf24; border:1px solid rgba(245,158,11,0.25);';
+        } else {
+          style += 'background:rgba(15,184,160,0.15); color:#0FB8A0; border:1px solid rgba(15,184,160,0.15);';
+        }
+        var subText = billingData.days < 0 ? '🔴 Vencido (' + Math.abs(billingData.days) + ' d)' : '📅 En ' + billingData.days + ' d';
+        var svcLabel = billingData.srvName.length > 18 ? billingData.srvName.substring(0,16) + '..' : billingData.srvName;
+        
+        billingBadge = '<div style="display:flex; flex-direction:column; gap:2px; align-items:flex-start;">'
+          + '<span style="' + style + '" title="' + billingData.srvName + ': ' + billingData.amountStr + '">' + subText + '</span>'
+          + '<span style="font-size:10px; color:var(--tx2)" title="' + billingData.srvName + '">' + svcLabel + ' ' + billingData.amountStr + '</span>'
+          + '</div>';
+      }
+
       html += '<tr>'
         + '<td><div class="nc"><div class="av" style="background:' + ac(c.name) + '20;color:' + ac(c.name) + '">' + ini(c.name) + '</div>'
         + '<div><div style="font-weight:500;cursor:pointer;color:var(--purple)" onclick="openDetail(\'' + c.id + '\')">' + c.name + '</div>'
         + '<div style="font-size:11px;color:var(--tx2)">' + (c.email||'—') + '</div></div></div></td>'
         + '<td>' + c.company + '</td><td>' + (c.phone||'—') + '</td>'
         + '<td><span class="badge ' + bClass + '">' + c.status + '</span></td>'
+        + '<td>' + billingBadge + '</td>'
         + '<td>' + (c.industry||'—') + '</td>'
         + '<td style="white-space:nowrap;display:flex;gap:5px">'
         + '<button class="bi btn-sm" onclick="openDetail(\'' + c.id + '\')">&#128065;</button>'
@@ -1136,9 +1351,25 @@ function openDetail(id) {
       var d = deals[i]; var st = null;
       for (var j = 0; j < STAGES.length; j++) { if (STAGES[j].id === d.stage) { st = STAGES[j]; break; } }
       if (!st) st = STAGES[0];
+
+      var interestVal = d.interest || 'medio';
+      var intBg = 'rgba(251,191,36,0.12)';
+      var intColor = '#fbbf24';
+      var intLabel = 'Medio';
+      if (interestVal === 'bajo') {
+        intBg = 'rgba(56,189,248,0.12)';
+        intColor = '#38bdf8';
+        intLabel = 'Bajo';
+      } else if (interestVal === 'alto') {
+        intBg = 'rgba(239,68,68,0.12)';
+        intColor = '#f87171';
+        intLabel = 'Alto';
+      }
+      var intBadge = '<span style="font-size:11px;background:' + intBg + ';color:' + intColor + ';padding:2px 7px;border-radius:12px;margin-left:5px;font-weight:500">' + intLabel + '</span>';
+
       dealsHtml += '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--br)">'
-        + '<div><div style="font-size:13px;font-weight:500">' + d.title + '</div>'
-        + '<span style="font-size:11px;background:' + st.color + '20;color:' + st.color + ';padding:2px 7px;border-radius:12px">' + st.label + '</span></div>'
+        + '<div><div style="font-size:13px;font-weight:500;margin-bottom:2px">' + d.title + '</div>'
+        + '<span style="font-size:11px;background:' + st.color + '20;color:' + st.color + ';padding:2px 7px;border-radius:12px">' + st.label + '</span>' + intBadge + '</div>'
         + '<div style="font-size:13px;font-weight:500;color:var(--teal)">' + Q(d.value) + '</div></div>';
     }
   } else { dealsHtml = '<div style="color:var(--tx2);font-size:13px;padding:1rem 0;text-align:center">Sin oportunidades</div>'; }
@@ -1184,6 +1415,7 @@ function openDetail(id) {
       + '<th>Pago Inicial</th>'
       + '<th>Mensual (Q)</th>'
       + '<th>Anual (Q)</th>'
+      + '<th>Próximo Cobro</th>'
       + '<th style="text-align:right">Acciones</th>'
       + '</tr></thead><tbody>';
     for (var i = 0; i < contractedServices.length; i++) {
@@ -1202,6 +1434,36 @@ function openDetail(id) {
       var monthlyPay = srv.monthlyPayment ? Q(srv.monthlyPayment) : '—';
       var yearlyPay = srv.yearlyPayment ? Q(srv.yearlyPayment) : '—';
       
+      // Calculate Next Payment Warning Badges
+      var nextPaymentHtml = '<span style="color:var(--tx3); font-style:italic; font-size:12px">— No rec.</span>';
+      if (srv.nextPaymentDate) {
+        var nextDate = new Date(srv.nextPaymentDate + 'T00:00:00');
+        var today = new Date();
+        today.setHours(0,0,0,0);
+        nextDate.setHours(0,0,0,0);
+        
+        var diffTime = nextDate - today;
+        var diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        var warningDays = srv.billingWarning !== undefined ? parseInt(srv.billingWarning, 10) : 30;
+        
+        var alertStyle = 'font-size:10px; padding:3px 8px; border-radius:12px; font-weight:600; display:inline-block;';
+        var alertText = '';
+        
+        if (diffDays < 0) {
+          alertStyle += 'background:rgba(226,75,74,0.15); color:#ff6c6c; border:1px solid rgba(226,75,74,0.3);';
+          alertText = '🔴 Vencido hace ' + Math.abs(diffDays) + ' d';
+        } else if (warningDays !== -1 && diffDays <= warningDays) {
+          alertStyle += 'background:rgba(245,158,11,0.15); color:#fbbf24; border:1px solid rgba(245,158,11,0.3);';
+          alertText = '⚠️ Cobrar pronto (en ' + diffDays + ' d)';
+        } else {
+          alertStyle += 'background:rgba(15,184,160,0.15); color:#0FB8A0; border:1px solid rgba(15,184,160,0.2);';
+          alertText = '📅 En ' + diffDays + ' d';
+        }
+        
+        nextPaymentHtml = '<div style="font-weight:600; font-size:12.5px; margin-bottom: 2px;">' + dt(srv.nextPaymentDate) + '</div>'
+          + '<span style="' + alertStyle + '">' + alertText + '</span>';
+      }
+      
       var notesTip = srv.notes ? '<div style="font-size:11px;color:var(--tx2);margin-top:2px;font-style:italic;max-width:300px;white-space:normal;line-height:1.3;">' + srv.notes.replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</div>' : '';
 
       srvsHtml += '<tr>'
@@ -1211,6 +1473,7 @@ function openDetail(id) {
         + '<td style="font-weight:500;color:var(--tx)">' + initialPay + '</td>'
         + '<td style="font-weight:500;color:var(--teal)">' + monthlyPay + '</td>'
         + '<td style="font-weight:500;color:var(--purple)">' + yearlyPay + '</td>'
+        + '<td>' + nextPaymentHtml + '</td>'
         + '<td style="text-align:right;white-space:nowrap;">'
         + '<button class="btn btn-ghost btn-sm" style="color:var(--purple);padding:0 6px;" onclick="openContractedServiceModal(\'' + srv.id + '\')">Editar</button>'
         + '<button class="btn btn-ghost btn-sm" style="color:var(--pink);padding:0 6px;" onclick="deleteContractedService(\'' + srv.id + '\')">Eliminar</button>'
@@ -1401,6 +1664,7 @@ function openDealModal(id, stageId, clientId) {
   document.getElementById('d-notes').value = d ? (d.notes||'') : '';
   document.getElementById('d-close').value = d ? (d.closeDate||'') : '';
   document.getElementById('d-stage').value = d ? d.stage : (stageId||'opp');
+  document.getElementById('d-interest').value = d ? (d.interest||'medio') : 'medio';
   document.getElementById('d-id').value = d ? d.id : '';
   document.getElementById('d-del-btn').style.display = d ? 'inline-flex' : 'none';
   var sel = document.getElementById('d-client');
@@ -1441,6 +1705,7 @@ function saveDeal() {
     stage:document.getElementById('d-stage').value,
     value:document.getElementById('d-value').value,
     closeDate:document.getElementById('d-close').value,
+    interest:document.getElementById('d-interest').value,
     notes:document.getElementById('d-notes').value.trim(),
     createdAt:new Date().toISOString()};
   if (!isNew) {
@@ -3213,6 +3478,8 @@ function openContractedServiceModal(serviceId) {
   document.getElementById('cs-status').value = srv ? (srv.status || 'activo') : 'activo';
   document.getElementById('cs-monthly-payment').value = srv ? (srv.monthlyPayment || 0) : 0;
   document.getElementById('cs-yearly-payment').value = srv ? (srv.yearlyPayment || 0) : 0;
+  document.getElementById('cs-next-payment-date').value = srv ? (srv.nextPaymentDate || '') : '';
+  document.getElementById('cs-billing-warning').value = srv ? (srv.billingWarning !== undefined ? srv.billingWarning : '30') : '30';
   document.getElementById('cs-notes').value = srv ? (srv.notes || '') : '';
   document.getElementById('cs-id').value = srv ? srv.id : '';
 
@@ -3247,6 +3514,8 @@ function saveContractedService() {
     status: document.getElementById('cs-status').value,
     monthlyPayment: parseFloat(document.getElementById('cs-monthly-payment').value) || 0,
     yearlyPayment: parseFloat(document.getElementById('cs-yearly-payment').value) || 0,
+    nextPaymentDate: document.getElementById('cs-next-payment-date').value,
+    billingWarning: parseInt(document.getElementById('cs-billing-warning').value, 10),
     notes: document.getElementById('cs-notes').value.trim()
   };
 
