@@ -1,0 +1,3299 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Integlis CRM</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --navy:#0A0A14;--purple:#7C6FE0;--teal:#0FB8A0;--amber:#F5A623;
+  --pl:rgba(124,111,224,.12);--tl:rgba(15,184,160,.12);--al:rgba(245,166,35,.12);
+  --bg:#F4F4F7;--sur:#fff;--sur2:#F0F0F4;
+  --tx:#1A1A2E;--tx2:#6B6B80;--tx3:#A0A0B0;
+  --br:rgba(0,0,0,.08);--br2:rgba(0,0,0,.14);
+  --r:8px;--rl:12px;
+}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--tx);font-size:14px}
+a{color:var(--purple);text-decoration:none}
+.topbar{background:var(--navy);height:54px;display:flex;align-items:center;padding:0 1.25rem;gap:.75rem;border-bottom:1px solid rgba(124,111,224,.25);position:sticky;top:0;z-index:50}
+.logo{display:flex;align-items:center;gap:8px;text-decoration:none}
+.logo-text{font-size:17px;font-weight:700;color:#fff;font-family:Georgia,serif;letter-spacing:1.5px}
+.nav{display:flex;gap:2px;margin-left:1rem}
+.nav-btn{background:none;border:none;color:rgba(255,255,255,.5);padding:6px 11px;border-radius:6px;cursor:pointer;font-size:12px;font-family:'DM Sans',sans-serif;display:flex;align-items:center;gap:5px;transition:all .15s;border-bottom:2px solid transparent}
+.nav-btn:hover{color:#fff;background:rgba(255,255,255,.07)}
+.nav-btn.active{color:#fff;background:rgba(124,111,224,.2);border-bottom-color:var(--purple)}
+.badge-count{background:var(--amber);color:#fff;font-size:10px;padding:1px 5px;border-radius:10px;font-weight:500;min-width:16px;text-align:center}
+.topbar-right{margin-left:auto}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:var(--r);border:none;cursor:pointer;font-size:13px;font-family:'DM Sans',sans-serif;font-weight:500;transition:all .15s;white-space:nowrap}
+.btn-primary{background:var(--purple);color:#fff}.btn-primary:hover{background:#6a5ecf}
+.btn-teal{background:var(--teal);color:#fff}.btn-teal:hover{background:#0da090}
+.btn-ghost{background:transparent;color:var(--tx2);border:1px solid var(--br2)}.btn-ghost:hover{background:var(--sur2)}
+.btn-danger{background:transparent;color:#e24b4a;border:1px solid #e24b4a}.btn-danger:hover{background:#fcebeb}
+.btn-sm{padding:5px 10px;font-size:12px}
+.bi{padding:6px;border-radius:var(--r);background:transparent;border:1px solid var(--br2);cursor:pointer;color:var(--tx2);display:inline-flex;align-items:center;transition:all .15s}.bi:hover{background:var(--sur2)}
+.view{display:none;padding:1.5rem;max-width:1400px;margin:0 auto}
+.view.active{display:block}
+.ph{display:flex;align-items:center;justify-content:space-between;gap:0.75rem;margin-bottom:1.5rem;flex-wrap:wrap}
+.pt{font-size:18px;font-weight:500}
+.card{background:var(--sur);border-radius:var(--rl);border:1px solid var(--br);padding:1.25rem}
+.ct{font-size:14px;font-weight:500;margin-bottom:1rem;display:flex;align-items:center;justify-content:space-between}
+.mg{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:1.5rem}
+.mc{background:var(--sur);border:1px solid var(--br);border-radius:var(--rl);padding:1rem;text-align:center}
+.ml{font-size:11px;color:var(--tx2);margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px}
+.mv{font-size:24px;font-weight:500}
+.kanban{display:flex;gap:10px;overflow-x:auto;padding-bottom:1rem}
+.kc{min-width:185px;flex:1;background:var(--sur2);border-radius:var(--rl);padding:11px;transition:all .15s}
+.kc.drag-over{background:rgba(124,111,224,0.12);outline:2px dashed var(--purple);outline-offset:-3px}
+.kch{font-size:12px;font-weight:500;color:var(--tx2);margin-bottom:10px;display:flex;align-items:center;justify-content:space-between}
+.kb{font-size:11px;background:var(--sur);border:1px solid var(--br);border-radius:12px;padding:1px 7px;color:var(--tx2)}
+.dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:5px}
+.dc{background:var(--sur);border:1px solid var(--br);border-radius:var(--r);padding:10px 12px;margin-bottom:8px;cursor:pointer;transition:all .15s;border-left:3px solid transparent}
+.dc.dragging{opacity:0.4}
+.dc:hover{transform:translateY(-1px);box-shadow:0 2px 8px rgba(0,0,0,.08)}
+.dn{font-size:13px;font-weight:500;margin-bottom:3px}
+.dco{font-size:12px;color:var(--tx2);margin-bottom:7px}
+.df{display:flex;justify-content:space-between;align-items:center}
+.dv{font-size:12px;font-weight:500;color:var(--teal)}
+.dd{font-size:11px;color:var(--tx3)}
+.adb{width:100%;background:none;border:1px dashed var(--br2);border-radius:var(--r);padding:7px;color:var(--tx2);cursor:pointer;font-size:12px;font-family:'DM Sans',sans-serif;margin-top:4px;transition:all .15s}
+.adb:hover{border-color:var(--purple);color:var(--purple);background:var(--pl)}
+.tbl{width:100%;border-collapse:collapse;font-size:13px}
+.tbl th{text-align:left;padding:9px 12px;font-size:11px;font-weight:500;color:var(--tx2);border-bottom:1px solid var(--br);text-transform:uppercase;letter-spacing:.4px}
+.tbl td{padding:10px 12px;border-bottom:1px solid var(--br);vertical-align:middle}
+.tbl tr:last-child td{border-bottom:none}
+.tbl tbody tr:hover td{background:var(--sur2)}
+.av{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:500;flex-shrink:0}
+.av-lg{width:48px;height:48px;font-size:16px}
+.nc{display:flex;align-items:center;gap:10px}
+.badge{font-size:11px;padding:3px 9px;border-radius:12px;font-weight:500;display:inline-block}
+.ba{background:var(--tl);color:var(--teal)}
+.bp{background:var(--pl);color:var(--purple)}
+.bi2{background:var(--sur2);color:var(--tx2)}
+.fr{display:grid;grid-template-columns:1fr;gap:12px}
+@media(min-width:480px){.fr{grid-template-columns:1fr 1fr}}
+.fg{display:flex;flex-direction:column;gap:5px;margin-bottom:12px}
+.fl{font-size:12px;font-weight:500;color:var(--tx2)}
+input,select,textarea{padding:8px 11px;border:1px solid var(--br2);border-radius:var(--r);background:var(--sur);color:var(--tx);font-size:13px;font-family:'DM Sans',sans-serif;width:100%;transition:border .15s}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--purple);box-shadow:0 0 0 3px var(--pl)}
+textarea{resize:vertical;min-height:75px;line-height:1.5}
+.backdrop{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:200;display:none;align-items:center;justify-content:center;padding:1rem}
+.backdrop.open{display:flex}
+.t-tab{padding:10px 14px; border:none; background:none; cursor:pointer; font-size:13px; font-weight:500; color:var(--tx2); border-bottom:2px solid transparent;}
+.t-tab:hover{color:var(--purple); background:rgba(124,111,224,0.05);}
+.t-tab.active{color:var(--purple) !important; border-bottom:2px solid var(--purple) !important;}
+.modal{background:var(--sur);border-radius:var(--rl);width:100%;max-width:560px;max-height:92vh;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,.18)}
+.modal-lg{max-width:660px}
+.modal-xl{max-width:1150px;width:95vw}
+.quote-modal-layout{display:grid;grid-template-columns:1fr;gap:1.5rem}
+
+/* Responsive grid utilities */
+.grid-2col {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+@media(min-width: 768px) {
+  .grid-2col {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+.grid-analytics-main {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+@media(min-width: 900px) {
+  .grid-analytics-main {
+    grid-template-columns: 2fr 1fr;
+  }
+}
+.grid-3col-responsive {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+@media(min-width: 600px) {
+  .grid-3col-responsive {
+    grid-template-columns: 1fr 1fr 1fr;
+  }
+}
+
+@media(max-width: 900px) {
+  .topbar {
+    flex-wrap: wrap;
+    height: auto;
+    padding: 0.5rem 1rem;
+    gap: 0.5rem;
+  }
+  .nav {
+    order: 3;
+    width: 100%;
+    margin-left: 0;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 4px;
+    gap: 4px;
+  }
+  .nav-btn {
+    flex-shrink: 0;
+  }
+  .topbar-right {
+    margin-left: auto;
+  }
+}
+@media(min-width:920px){.quote-modal-layout{grid-template-columns:1.15fr .85fr}}
+.mh{padding:1.25rem 1.5rem 1rem;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--br)}
+.mt2{font-size:16px;font-weight:500}
+.mb2{padding:1.25rem 1.5rem}
+.mf{padding:1rem 1.5rem;border-top:1px solid var(--br);display:flex;gap:8px;justify-content:flex-end}
+.cbtn{background:none;border:none;cursor:pointer;color:var(--tx2);font-size:18px;line-height:1;width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;padding:0;font-family:sans-serif}.cbtn:hover{background:var(--sur2);color:var(--tx)}
+.svc-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:1rem}
+.so{border:1px solid var(--br2);border-radius:var(--r);padding:9px 11px;cursor:pointer;transition:all .15s}
+.so:hover{border-color:var(--purple);background:var(--pl)}
+.so.on{border-color:var(--purple);background:var(--pl)}
+.sn{font-size:12px;font-weight:500;color:var(--tx);margin-bottom:2px}
+.sp{font-size:11px;color:var(--tx2)}
+.so.on .sn{color:var(--purple)}.so.on .sp{color:var(--purple)}
+.sr{display:flex;gap:8px;margin-bottom:1rem}
+.sr input{flex:1}.sr select{width:auto}
+.empty{text-align:center;padding:3rem 1rem;color:var(--tx2)}
+.empty i{font-size:36px;opacity:.35;display:block;margin-bottom:.75rem}
+.task-item{display:flex;align-items:flex-start;gap:12px;padding:12px 0;border-bottom:1px solid var(--br)}
+.task-item:last-child{border-bottom:none}
+.task-cb{width:20px;height:20px;border-radius:6px;border:2px solid var(--br2);cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;margin-top:1px;transition:all .15s;font-size:12px;color:#fff}
+.task-cb.done{background:var(--teal);border-color:var(--teal)}
+.task-body{flex:1}
+.task-title{font-size:13px;font-weight:500;line-height:1.4}
+.task-title.done{text-decoration:line-through;color:var(--tx3)}
+.task-meta{font-size:12px;color:var(--tx2);margin-top:3px;display:flex;gap:10px;flex-wrap:wrap}
+.task-due.overdue{color:#e24b4a}
+.task-due.today{color:var(--amber)}
+.prio-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:6px}
+.doc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px}
+.fin-tabs{display:flex;border-bottom:1px solid var(--br);margin-bottom:1rem}
+.ft{padding:8px 14px;font-size:13px;background:none;border:none;border-bottom:2px solid transparent;cursor:pointer;color:var(--tx2);font-family:'DM Sans',sans-serif;transition:all .15s}
+.ft.active{color:var(--purple);border-bottom-color:var(--purple)}
+.type-chip{font-size:11px;padding:2px 8px;border-radius:12px;font-weight:500}
+.tc-factura{background:#e6f1fb;color:#185fa5}
+.tc-recibo{background:var(--tl);color:var(--teal)}
+.tc-contrato{background:var(--pl);color:var(--purple)}
+.tc-presupuesto{background:var(--al);color:var(--amber)}
+.tc-otro{background:var(--sur2);color:var(--tx2)}
+#clientDetail{display:none}
+#clientDetail.open{display:block}
+.progress-bar{height:6px;background:var(--sur2);border-radius:3px;overflow:hidden}
+.progress-fill{height:100%;border-radius:3px;transition:width .3s}
+
+.login-container{display:flex;align-items:center;justify-content:center;min-height:100vh;background:var(--navy);padding:1.5rem;font-family:'DM Sans',sans-serif}
+.login-card{background:#11111E;border:1px solid rgba(255,255,255,.08);border-radius:16px;width:100%;max-width:400px;padding:2.25rem;box-shadow:0 12px 36px rgba(0,0,0,.4);text-align:left}
+.login-title{font-size:22px;font-weight:700;color:#fff;font-family:Georgia,serif;letter-spacing:1.5px}
+.login-subtitle{font-size:11px;color:var(--tx3);text-transform:uppercase;letter-spacing:1px;margin-top:4px}
+.login-label{font-size:12px;font-weight:500;color:#A0A0B0;display:block;margin-bottom:6px}
+.login-input{background:#1A1A2A;border:1px solid rgba(255,255,255,.12);color:#fff;padding:10px 12px;border-radius:var(--r);font-size:13px;width:100%;transition:all .15s;margin-bottom:12px}
+.login-input:focus{outline:none;border-color:var(--purple);box-shadow:0 0 0 3px rgba(124,111,224,.35)}
+.login-btn{background:var(--purple);color:#fff;width:100%;padding:11px;font-weight:500;font-size:14px;border:none;border-radius:var(--r);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;transition:all .15s}
+.login-btn:hover{background:#6a5ecf}
+.login-err{background:rgba(226,75,74,.12);border:1px solid #e24b4a;color:#fba3a2;border-radius:8px;padding:10px 12px;font-size:12px;margin-bottom:1.25rem;display:none;line-height:1.4}
+</style>
+</head>
+<body>
+
+<!-- LOGIN CONTAINER -->
+<div class="login-container" id="login-container" style="display:none;">
+  <div class="login-card">
+    <div style="display:flex; flex-direction:column; align-items:center; margin-bottom:1.75rem; text-align:center;">
+      <svg width="44" height="44" viewBox="0 0 28 28" fill="none" style="margin-bottom:12px;">
+        <circle cx="8" cy="14" r="5" fill="#7C6FE0"/>
+        <circle cx="20" cy="7" r="5" fill="#7C6FE0"/>
+        <circle cx="20" cy="21" r="5" fill="#0FB8A0"/>
+        <line x1="12.5" y1="12" x2="15.5" y2="9" stroke="rgba(255,255,255,0.3)" stroke-width="1.5"/>
+        <line x1="12.5" y1="16" x2="15.5" y2="19" stroke="rgba(255,255,255,0.3)" stroke-width="1.5"/>
+      </svg>
+      <div class="login-title">INTEGLIS CRM</div>
+      <div class="login-subtitle">Consultoría & Tecnología</div>
+    </div>
+    
+    <div class="login-err" id="login-error">
+      El correo o la contraseña ingresados son incorrectos. Por favor, verifique sus datos.
+    </div>
+    
+    <form onsubmit="handleLogin(event)">
+      <div style="margin-bottom:1rem;">
+        <label class="login-label">Usuario / Correo Electrónico</label>
+        <input type="email" id="login-email" class="login-input" required placeholder="correo@integlis.com">
+      </div>
+      <div style="margin-bottom:1.5rem;">
+        <label class="login-label">Contraseña</label>
+        <input type="password" id="login-password" class="login-input" required placeholder="••••••••••••">
+      </div>
+      <button type="submit" class="login-btn">Iniciar Sesión</button>
+    </form>
+  </div>
+</div>
+
+<!-- CRM APP WRAPPER -->
+<div id="crm-app" style="display:none;">
+
+<div class="topbar">
+  <a class="logo" href="#">
+    <svg width="26" height="26" viewBox="0 0 28 28" fill="none">
+      <circle cx="8" cy="14" r="5" fill="#7C6FE0"/>
+      <circle cx="20" cy="7" r="5" fill="#7C6FE0"/>
+      <circle cx="20" cy="21" r="5" fill="#0FB8A0"/>
+      <line x1="12.5" y1="12" x2="15.5" y2="9" stroke="rgba(255,255,255,0.3)" stroke-width="1.5"/>
+      <line x1="12.5" y1="16" x2="15.5" y2="19" stroke="rgba(255,255,255,0.3)" stroke-width="1.5"/>
+    </svg>
+    <span class="logo-text">INTEGLIS</span>
+  </a>
+  <nav class="nav">
+    <button class="nav-btn active" id="nav-dashboard" onclick="show('dashboard')">Dashboard</button>
+    <button class="nav-btn" id="nav-pipeline" onclick="show('pipeline')">Pipeline</button>
+    <button class="nav-btn" id="nav-clients" onclick="show('clients')">Clientes</button>
+    <button class="nav-btn" id="nav-quotes" onclick="show('quotes')">Cotizaciones</button>
+    <button class="nav-btn" id="nav-finance" onclick="show('finance')">Finanzas</button>
+    <button class="nav-btn" id="nav-tasks" onclick="show('tasks')">Tareas <span class="badge-count" id="pending-count" style="display:none"></span></button>
+    <button class="nav-btn" id="nav-analytics" onclick="show('analytics')">Análisis</button>
+  </nav>
+  <div class="topbar-right" style="display:flex; align-items:center; gap:8px;">
+    <button class="btn btn-primary btn-sm" onclick="openClientModal(null)">+ Nuevo cliente</button>
+    <button class="btn btn-ghost btn-sm" onclick="logout()" style="color:#fff; border-color:rgba(255,255,255,0.25); background:rgba(255,255,255,0.06); font-weight:400;">Cerrar sesión</button>
+  </div>
+</div>
+
+<!-- DASHBOARD -->
+<div class="view active" id="view-dashboard">
+  <div class="ph"><div class="pt">Dashboard</div><span id="today-date" style="font-size:12px;color:var(--tx2)"></span></div>
+  <div class="mg" id="metrics"></div>
+  <div class="grid-2col" style="margin-bottom:1rem">
+    <div class="card"><div class="ct">Oportunidades recientes <button class="btn btn-ghost btn-sm" onclick="show('pipeline')">Ver todo</button></div><div id="dash-deals"></div></div>
+    <div class="card"><div class="ct">Clientes recientes <button class="btn btn-ghost btn-sm" onclick="show('clients')">Ver todo</button></div><div id="dash-clients"></div></div>
+  </div>
+  <div class="grid-2col">
+    <div class="card"><div class="ct">Tareas pendientes <button class="btn btn-ghost btn-sm" onclick="show('tasks')">Ver todo</button></div><div id="dash-tasks"></div></div>
+    <div class="card"><div class="ct">Documentos recientes <button class="btn btn-ghost btn-sm" onclick="show('finance')">Ver todo</button></div><div id="dash-docs"></div></div>
+  </div>
+</div>
+
+<!-- PIPELINE -->
+<div class="view" id="view-pipeline">
+  <div class="ph">
+    <div class="pt">Pipeline de ventas</div>
+    <div style="display:flex; gap:8px;">
+      <button class="btn btn-ghost btn-sm" onclick="openTrashModal('deal')" style="color:var(--tx2); border:1px solid var(--br2);"><i style="font-style:normal;margin-right:4px;">🗑️</i> Eliminados</button>
+      <button class="btn btn-primary" onclick="openDealModal(null,null,null)">+ Nueva oportunidad</button>
+    </div>
+  </div>
+  <div class="kanban" id="kanban"></div>
+</div>
+
+<!-- CLIENTS -->
+<div class="view" id="view-clients">
+  <div id="clientsList">
+    <div class="ph">
+      <div class="pt">Clientes <span id="client-count" style="font-size:13px;color:var(--tx2);font-weight:400"></span></div>
+      <div style="display:flex; gap:8px;">
+        <button class="btn btn-ghost btn-sm" onclick="openTrashModal('client')" style="color:var(--tx2); border:1px solid var(--br2);"><i style="font-style:normal;margin-right:4px;">🗑️</i> Eliminados</button>
+        <button class="btn btn-primary" onclick="openClientModal(null)">+ Nuevo cliente</button>
+      </div>
+    </div>
+    <div class="sr">
+      <input id="c-search" placeholder="Buscar por nombre, empresa o email..." oninput="renderClients()">
+      <select id="c-filter" onchange="renderClients()"><option value="">Todos</option><option value="Activo">Activos</option><option value="Prospecto">Prospectos</option><option value="Inactivo">Inactivos</option></select>
+    </div>
+    <div class="card" style="padding:0;overflow:hidden">
+      <table class="tbl"><thead><tr><th>Cliente</th><th>Empresa</th><th>Teléfono</th><th>Estado</th><th>Industria</th><th>Acciones</th></tr></thead>
+      <tbody id="clients-body"></tbody></table>
+    </div>
+  </div>
+  <div id="clientDetail">
+    <div class="ph">
+      <div style="display:flex;align-items:center;gap:10px">
+        <button class="btn btn-ghost btn-sm" onclick="closeDetail()">&#8592; Volver</button>
+        <span class="pt" id="detail-name"></span>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-ghost btn-sm" id="detail-edit-btn">Editar</button>
+        <button class="btn btn-ghost btn-sm" id="detail-doc-btn">+ Documento</button>
+        <button class="btn btn-teal btn-sm" id="detail-quote-btn">Cotizar</button>
+      </div>
+    </div>
+    <div id="detail-body"></div>
+  </div>
+</div>
+
+<!-- QUOTES -->
+<div class="view" id="view-quotes">
+  <div class="ph">
+    <div class="pt">Cotizaciones</div>
+    <div style="display:flex; gap:8px;">
+      <button class="btn btn-ghost btn-sm" onclick="openTrashModal('quote')" style="color:var(--tx2); border:1px solid var(--br2);"><i style="font-style:normal;margin-right:4px;">🗑️</i> Eliminados</button>
+      <button class="btn btn-primary" onclick="openQuoteModal(null)">+ Nueva cotización</button>
+    </div>
+  </div>
+  <div id="quotes-body"></div>
+</div>
+
+<!-- FINANCE -->
+<div class="view" id="view-finance">
+  <div class="ph">
+    <div class="pt">Finanzas & Documentos</div>
+    <div style="display:flex; gap:8px;">
+      <button class="btn btn-ghost btn-sm" onclick="openTrashModal('doc')" style="color:var(--tx2); border:1px solid var(--br2);"><i style="font-style:normal;margin-right:4px;">🗑️</i> Eliminados</button>
+      <button class="btn btn-primary" onclick="openDocModal(null,null)">+ Subir documento</button>
+    </div>
+  </div>
+  <div class="mg" id="fin-metrics"></div>
+  <div class="fin-tabs">
+    <button class="ft active" id="ft-all" onclick="setFinTab('all')">Todos</button>
+    <button class="ft" id="ft-factura" onclick="setFinTab('factura')">Facturas</button>
+    <button class="ft" id="ft-recibo" onclick="setFinTab('recibo')">Recibos</button>
+    <button class="ft" id="ft-contrato" onclick="setFinTab('contrato')">Contratos</button>
+    <button class="ft" id="ft-presupuesto" onclick="setFinTab('presupuesto')">Presupuestos</button>
+    <button class="ft" id="ft-otro" onclick="setFinTab('otro')">Otros</button>
+  </div>
+  <div class="sr">
+    <input id="fin-search" placeholder="Buscar por nombre, cliente o notas..." oninput="renderFinance()">
+    <select id="fin-client-filter" onchange="renderFinance()"><option value="">Todos los clientes</option></select>
+  </div>
+  <div id="fin-body"></div>
+</div>
+
+<!-- TASKS -->
+<div class="view" id="view-tasks">
+  <div class="ph">
+    <div class="pt">Tareas</div>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <select id="task-filter" onchange="renderTasks()" style="width:auto;margin:0;">
+        <option value="pending">Pendientes</option>
+        <option value="all">Todas</option>
+        <option value="done">Completadas</option>
+      </select>
+      <button class="btn btn-ghost btn-sm" onclick="openTrashModal('task')" style="color:var(--tx2); border:1px solid var(--br2); height:38px; display:inline-flex; align-items:center; justify-content:center;"><i style="font-style:normal;margin-right:4px;">🗑️</i> Eliminados</button>
+      <button class="btn btn-primary" onclick="openTaskModal(null,null)">+ Nueva tarea</button>
+    </div>
+  </div>
+  <div class="card" style="margin-bottom:1rem">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+      <span style="font-size:13px;font-weight:500">Progreso</span>
+      <span id="task-progress-label" style="font-size:12px;color:var(--tx2)"></span>
+    </div>
+    <div class="progress-bar"><div class="progress-fill" id="task-progress-bar" style="background:var(--teal)"></div></div>
+  </div>
+  <div id="tasks-overdue" style="margin-bottom:1rem"></div>
+  <div id="tasks-today" style="margin-bottom:1rem"></div>
+  <div id="tasks-upcoming" style="margin-bottom:1rem"></div>
+  <div id="tasks-no-date" style="margin-bottom:1rem"></div>
+  <div id="tasks-done-section" style="margin-bottom:1rem"></div>
+</div>
+
+<!-- ANALYTICS -->
+<div class="view" id="view-analytics">
+  <div class="ph">
+    <div class="pt">Análisis & Estadísticas</div>
+    <select id="an-period" onchange="renderAnalytics()" style="width:auto">
+      <option value="all">Todo el tiempo</option>
+      <option value="30">Últimos 30 días</option>
+      <option value="90">Últimos 90 días</option>
+      <option value="180">Últimos 6 meses</option>
+    </select>
+  </div>
+  <div class="mg" id="an-kpis" style="grid-template-columns:repeat(auto-fit,minmax(160px,1fr))"></div>
+  <div class="grid-analytics-main" style="margin-bottom:1rem">
+    <div class="card"><div class="ct">Funnel de conversión</div><div id="an-funnel"></div></div>
+    <div class="card"><div class="ct">Win / Loss</div><div id="an-winloss" style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:180px"></div></div>
+  </div>
+  <div class="grid-2col" style="margin-bottom:1rem">
+    <div class="card"><div class="ct">Valor por etapa</div><div id="an-stage-value"></div></div>
+    <div class="card"><div class="ct">Servicios más cotizados</div><div id="an-services"></div></div>
+  </div>
+  <div class="grid-2col" style="margin-bottom:1rem">
+    <div class="card"><div class="ct">Resumen financiero</div><div id="an-finance"></div></div>
+    <div class="card"><div class="ct">Actividad de tareas</div><div id="an-tasks"></div></div>
+  </div>
+  <div class="card" style="margin-bottom:1rem"><div class="ct">Top clientes por valor</div><div id="an-clients"></div></div>
+</div>
+
+<!-- MODAL: QUICK CLIENT (z-index 300 so it appears above deal modal) -->
+<div class="backdrop" id="m-quick-client" style="z-index:300" onclick="bgClose(event,'m-quick-client')">
+  <div class="modal" style="max-width:420px" onclick="event.stopPropagation()">
+    <div class="mh"><span class="mt2">Nuevo cliente rápido</span><button class="cbtn" onclick="mClose('m-quick-client')">&#10005;</button></div>
+    <div class="mb2">
+      <div class="fr">
+        <div class="fg"><label class="fl">Nombre *</label><input id="qc-name" placeholder="María García"></div>
+        <div class="fg"><label class="fl">Empresa *</label><input id="qc-company" placeholder="Distribuidora XYZ"></div>
+      </div>
+      <div class="fr">
+        <div class="fg"><label class="fl">Email</label><input id="qc-email" type="email" placeholder="correo@empresa.com"></div>
+        <div class="fg"><label class="fl">Teléfono</label><input id="qc-phone" placeholder="+502 1234 5678"></div>
+      </div>
+      <div class="fg"><label class="fl">Estado</label>
+        <select id="qc-status"><option>Prospecto</option><option>Activo</option><option>Inactivo</option></select>
+      </div>
+    </div>
+    <div class="mf">
+      <button class="btn btn-ghost" onclick="mClose('m-quick-client')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveQuickClient()">Crear y seleccionar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: CLIENT -->
+<div class="backdrop" id="m-client" onclick="bgClose(event,'m-client')">
+  <div class="modal">
+    <div class="mh"><span class="mt2" id="m-client-title">Nuevo cliente</span><button class="cbtn" onclick="mClose('m-client')">&#10005;</button></div>
+    <div class="mb2">
+      <div class="fr">
+        <div class="fg"><label class="fl">Nombre *</label><input id="c-name" placeholder="María García"></div>
+        <div class="fg"><label class="fl">Empresa *</label><input id="c-company" placeholder="Distribuidora XYZ"></div>
+      </div>
+      <div class="fr">
+        <div class="fg"><label class="fl">Email</label><input id="c-email" type="email" placeholder="correo@empresa.com"></div>
+        <div class="fg"><label class="fl">Teléfono</label><input id="c-phone" placeholder="+502 1234 5678"></div>
+      </div>
+      <div class="fr">
+        <div class="fg"><label class="fl">Estado</label><select id="c-status"><option>Prospecto</option><option>Activo</option><option>Inactivo</option></select></div>
+        <div class="fg"><label class="fl">Industria</label><input id="c-industry" placeholder="Retail, Manufactura..."></div>
+      </div>
+      <div class="fg"><label class="fl">Sitio web</label><input id="c-web" placeholder="https://empresa.com"></div>
+      <div class="fg"><label class="fl">Notas</label><textarea id="c-notes" placeholder="Contexto relevante..."></textarea></div>
+      <input type="hidden" id="c-id">
+    </div>
+    <div class="mf">
+      <button class="btn btn-ghost" onclick="mClose('m-client')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveClient()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: CONTRACTED SERVICE -->
+<div class="backdrop" id="m-contracted-service" style="z-index:310" onclick="bgClose(event,'m-contracted-service')">
+  <div class="modal" style="max-width:480px" onclick="event.stopPropagation()">
+    <div class="mh">
+      <span class="mt2" id="m-contracted-service-title">Agregar servicio contratado</span>
+      <button class="cbtn" onclick="mClose('m-contracted-service')">&#10005;</button>
+    </div>
+    <div class="mb2">
+      <div class="fg">
+        <label class="fl">Servicio / Producto Contratado *</label>
+        <input id="cs-name" placeholder="Ej. Implantación CRM, Hosting Anual..." list="cs-suggested-services">
+        <datalist id="cs-suggested-services"></datalist>
+      </div>
+      <div class="fr">
+        <div class="fg"><label class="fl">Fecha Solicitado *</label><input id="cs-requested-date" type="date"></div>
+        <div class="fg"><label class="fl">Fecha Finalizado / Entregado</label><input id="cs-finished-date" type="date"></div>
+      </div>
+      <div class="fr" style="margin-top: 10px;">
+        <div class="fg"><label class="fl">Pago Inicial (Q)</label><input id="cs-initial-payment" type="number" value="0" min="0" placeholder="0"></div>
+        <div class="fg">
+          <label class="fl">Estado</label>
+          <select id="cs-status">
+            <option value="activo">Activo</option>
+            <option value="solicitado">Solicitado</option>
+            <option value="en_progreso">En progreso</option>
+            <option value="entregado">Entregado</option>
+            <option value="cancelado">Cancelado / Suspendido</option>
+          </select>
+        </div>
+      </div>
+      <div class="fr" style="margin-top: 10px;">
+        <div class="fg"><label class="fl">Pago Recurrente Mensual (Q)</label><input id="cs-monthly-payment" type="number" value="0" min="0" placeholder="0"></div>
+        <div class="fg"><label class="fl">Pago Recurrente Anual (Q)</label><input id="cs-yearly-payment" type="number" value="0" min="0" placeholder="0"></div>
+      </div>
+      <div class="fg" style="margin-top: 10px;"><label class="fl">Notas adicionales / Detalles</label><textarea id="cs-notes" placeholder="Indique alcances de hosting, accesos, periodo de pago, etc."></textarea></div>
+      <input type="hidden" id="cs-id">
+    </div>
+    <div class="mf">
+      <button class="btn btn-ghost" onclick="mClose('m-contracted-service')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveContractedService()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: DEAL -->
+<div class="backdrop" id="m-deal" onclick="bgClose(event,'m-deal')">
+  <div class="modal">
+    <div class="mh"><span class="mt2" id="m-deal-title">Nueva oportunidad</span><button class="cbtn" onclick="mClose('m-deal')">&#10005;</button></div>
+    <div class="mb2">
+      <div class="fg"><label class="fl">Título *</label><input id="d-title" placeholder="Implementación CRM – Empresa XYZ" oninput="updateDefaultDealTaskTitle()"></div>
+      <div class="fr">
+        <div class="fg"><label class="fl">Cliente</label>
+          <div style="display:flex;gap:6px">
+            <select id="d-client" style="flex:1"></select>
+            <button type="button" class="btn btn-ghost btn-sm" style="flex-shrink:0" onclick="openQuickClient()">+ Nuevo</button>
+          </div>
+        </div>
+        <div class="fg"><label class="fl">Etapa</label>
+          <select id="d-stage">
+            <option value="opp">Potential Opp</option>
+            <option value="prospecting">Prospecting</option>
+            <option value="contactado">Contacted</option>
+            <option value="reunion">Reunión diagnóstico</option>
+            <option value="propuesta">Propuesta enviada</option>
+            <option value="negociacion">Negociación</option>
+            <option value="ganado">Won</option>
+            <option value="perdido">Lost</option>
+          </select>
+        </div>
+      </div>
+      <div class="fr">
+        <div class="fg"><label class="fl">Valor estimado (Q)</label><input id="d-value" type="number" placeholder="8000"></div>
+        <div class="fg"><label class="fl">Cierre estimado</label><input id="d-close" type="date"></div>
+      </div>
+      <div class="fg"><label class="fl">Notas</label><textarea id="d-notes" placeholder="Contexto de la oportunidad..."></textarea></div>
+
+      <!-- EXISITING TASKS DIRECTLY IN DEAL -->
+      <div id="d-existing-tasks-container" style="display:none; margin-top:12px; border-top:1px dashed var(--br2); padding-top:12px;">
+        <label class="fl" style="font-weight: 500; font-size: 12px; color: var(--tx2); display: block; margin-bottom: 6px;">Tareas de seguimiento pendientes</label>
+        <div id="d-existing-tasks-list" style="max-height:120px; overflow-y:auto; margin-top:5px; background:var(--sur2); border-radius:8px; padding:8px; display:flex; flex-direction:column; gap:6px;">
+        </div>
+      </div>
+
+      <!-- NEW QUICK FOLLOW-UP TASK SECTION -->
+      <div style="border-top:1px dashed var(--br2); margin-top:12px; padding-top:12px;">
+        <label style="display:inline-flex; align-items:center; gap:8px; font-size:12px; font-weight:500; color:var(--purple); cursor:pointer; margin-bottom:4px;">
+          <input type="checkbox" id="d-task-enable" onchange="toggleDealTaskSection()" style="width:auto; cursor:pointer;">
+          <span>📋 Programar tarea de seguimiento o contacto</span>
+        </label>
+        
+        <div id="d-task-section" style="display:none; padding:10px; background:var(--sur2); border-radius:8px; margin-top:6px;">
+          <div class="fr" style="margin-bottom:8px; display: flex; gap: 8px;">
+            <div class="fg" style="margin-bottom:0; flex: 1;">
+              <label class="fl">Tipo de recordatorio</label>
+              <select id="d-task-type" onchange="updateDefaultDealTaskTitle()">
+                <option value="llamada">📞 Llamada telefónica</option>
+                <option value="correo">📧 Correo electrónico</option>
+                <option value="reunion">🤝 Reunión de seguimiento</option>
+                <option value="whatsapp">💬 Enviar WhatsApp</option>
+                <option value="propuesta">📄 Presentar o enviar propuesta</option>
+                <option value="otro">📝 Otro pendiente</option>
+              </select>
+            </div>
+            <div class="fg" style="margin-bottom:0; flex: 1;">
+              <label class="fl">¿Cuándo hacerlo?</label>
+              <select id="d-task-when" onchange="calcDealTaskDate()">
+                <option value="1">Mañana (En 1 día)</option>
+                <option value="2">En 2 días</option>
+                <option value="3">En 3 días</option>
+                <option value="7" selected>En 1 semana (7 días)</option>
+                <option value="15">En 15 días</option>
+                <option value="30">En 1 mes</option>
+                <option value="custom">Fecha personalizada...</option>
+              </select>
+            </div>
+          </div>
+          <div class="fg" id="d-task-custom-date-container" style="display:none; margin-bottom:8px;">
+            <label class="fl">Fecha fijada</label>
+            <input type="date" id="d-task-custom-date">
+          </div>
+          <div class="fg" style="margin-bottom:0;">
+            <label class="fl">Título / Descripción de la tarea</label>
+            <input type="text" id="d-task-title" placeholder="Ej. Llamar para confirmar recepción" oninput="document.getElementById('d-task-title').setAttribute('data-manual', 'true')" style="background:#fff; border:1px solid var(--br2); padding:6px 10px; border-radius:var(--r); font-size:13px; width:100%;">
+          </div>
+        </div>
+      </div>
+
+      <input type="hidden" id="d-id">
+    </div>
+    <div class="mf">
+      <button class="btn btn-ghost" onclick="mClose('m-deal')">Cancelar</button>
+      <button class="btn btn-danger btn-sm" id="d-del-btn" style="margin-right:auto;display:none" onclick="delDeal()">Eliminar</button>
+      <button class="btn btn-primary" onclick="saveDeal()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: QUOTE -->
+<div class="backdrop" id="m-quote" onclick="bgClose(event,'m-quote')">
+  <div class="modal modal-xl">
+    <div class="mh"><span class="mt2" id="q-modal-title">Nueva cotización</span><button class="cbtn" onclick="mClose('m-quote')">&#10005;</button></div>
+    <div class="mb2">
+      <div class="quote-modal-layout">
+        <!-- Columna de Datos (Izquierda) -->
+        <div>
+          <div class="fr">
+            <div class="fg" style="flex: 2;">
+              <label class="fl">Cliente *</label>
+              <div style="display:flex;gap:6px">
+                <select id="q-client" onchange="updateLiveQuotePreview()" style="flex:1"></select>
+                <button type="button" class="btn btn-ghost btn-sm" style="flex-shrink:0" onclick="openQuickClient()">+ Nuevo</button>
+              </div>
+            </div>
+            <div class="fg" style="flex: 1;"><label class="fl">NIT del Cliente</label><input id="q-client-nit" type="text" value="C/F" oninput="updateLiveQuotePreview()" placeholder="Ej. 9845722-1"></div>
+            <div class="fg" style="flex: 1;"><label class="fl">Fecha Emisión</label><input id="q-date" type="date" oninput="updateLiveQuotePreview()"></div>
+            <div class="fg" style="flex: 1;"><label class="fl">Validez (días)</label><input id="q-validity" type="number" value="30" oninput="updateLiveQuotePreview()"></div>
+          </div>
+          <div class="grid-3col-responsive">
+            <div class="fg" style="margin-bottom:12px;"><label class="fl">Valor Descuento</label><input id="q-discount-value" type="number" value="0" min="0" oninput="updateQuoteTotals(); updateLiveQuotePreview();" placeholder="0"></div>
+            <div class="fg" style="margin-bottom:12px;">
+              <label class="fl">Tipo Descuento</label>
+              <select id="q-discount-type" onchange="updateQuoteTotals(); updateLiveQuotePreview();">
+                <option value="porcentaje">Porcentaje Fijo (%)</option>
+                <option value="fijo">Monto Fijo (Q)</option>
+              </select>
+            </div>
+            <div class="fg" style="margin-bottom:12px;">
+              <label class="fl">Impuesto IVA (12%)</label>
+              <select id="q-apply-iva" onchange="updateQuoteTotals(); updateLiveQuotePreview();">
+                <option value="no">No incluir IVA</option>
+                <option value="yes">Incluir IVA (+12%)</option>
+              </select>
+            </div>
+          </div>
+          <div class="fr" style="margin-top: 8px;">
+            <div class="fg" style="margin-bottom: 0;"><label class="fl">Plazo de entrega</label><input id="q-delivery" type="text" oninput="updateLiveQuotePreview()" placeholder="Ej. 15 días hábiles, inmediato..."></div>
+            <div class="fg" style="margin-bottom: 0;"><label class="fl">Duración del servicio</label><input id="q-duration" type="text" oninput="updateLiveQuotePreview()" placeholder="Ej. Suscripción anual, Pago único, 6 meses..."></div>
+          </div>
+          <div class="fg" style="margin-top: 8px;"><label class="fl">Notas / condiciones de pago</label><textarea id="q-notes" oninput="updateLiveQuotePreview()" placeholder="Ej. 50% anticipo, 50% al entregar..."></textarea></div>
+          <div class="fg" style="margin-top: 8px;">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <label class="fl" style="margin-bottom:2px">Términos y condiciones del servicio</label>
+              <button type="button" class="btn" style="background:transparent; border:none; box-shadow:none; font-size:11px; padding:2px 6px; color:var(--purple); text-transform:none; font-weight:500; cursor:pointer;" onclick="loadDefaultTerms()">Cargar plantilla estándar</button>
+            </div>
+            <textarea id="q-terms" oninput="updateLiveQuotePreview()" placeholder="Ej. 1. Propiedad intelectual de INTEGLIS hasta el pago total.&#10;2. Vigencia de garantia de 30 días post-entrega.&#10;3. Confidencialidad sobre la información técnica compartida."></textarea>
+          </div>
+          <div class="fl" style="margin-top:16px; margin-bottom:8px; font-weight:600; color:var(--purple);">Selecciona servicios básicos de INTEGLIS</div>
+          <div class="svc-grid" id="svc-picker"></div>
+          <div id="q-preview"></div>
+        </div>
+        
+        <!-- Columna de Boceto en Tiempo Real (Derecha) -->
+        <div style="background:var(--sur2); border:1px solid var(--br); border-radius:var(--rl); padding:1rem; display:flex; flex-direction:column; gap:12px; max-height:calc(85vh - 120px); overflow-y:auto; position:sticky; top:0;">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <span style="font-weight:600; font-size:12px; color:var(--purple); text-transform:uppercase; letter-spacing:0.5px; display:flex; align-items:center; gap:6px;">
+              <span style="display:inline-block; width:6px; height:6px; background:#0FB8A0; border-radius:50%;"></span>
+              Boceto en tiempo real
+            </span>
+            <span style="background:var(--purple); color:#fff; font-size:10px; padding:2px 7px; border-radius:10px; font-weight:bold; letter-spacing:0.5px;">INTEGLIS</span>
+          </div>
+          
+          <div id="q-live-boceto" style="background:#fff; border:1px solid #ddd; border-radius:10px; padding:1.25rem; font-family:sans-serif; color:#333; box-shadow:0 4px 12px rgba(0,0,0,0.06); max-height:100%; overflow-y:auto;">
+            <!-- Renderizado dinámico -->
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="mf">
+      <button class="btn btn-ghost" onclick="mClose('m-quote')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveQuote()">Guardar cotización</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: PDF -->
+<div class="backdrop" id="m-pdf" onclick="bgClose(event,'m-pdf')">
+  <div class="modal" style="max-width: 860px; width: 95vw;">
+    <div class="mh"><span class="mt2">Vista previa de cotización</span><button class="cbtn" onclick="mClose('m-pdf')">&#10005;</button></div>
+    <div class="mb2" id="pdf-body" style="overflow-x: hidden; background: #f1f3f7; padding: 16px 8px; min-height: 250px;"></div>
+    <div class="mf" style="display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end;">
+      <button class="btn btn-ghost" onclick="mClose('m-pdf')">Cerrar</button>
+      <button class="btn btn-ghost" onclick="printQuote()" style="color:var(--purple); border-color:var(--purple);">Imprimir por navegador</button>
+      <button class="btn btn-primary" id="btn-download-pdf" onclick="downloadQuotePDF()">Descargar PDF</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: DOCUMENT -->
+<div class="backdrop" id="m-doc" onclick="bgClose(event,'m-doc')">
+  <div class="modal">
+    <div class="mh"><span class="mt2" id="m-doc-title">Subir documento</span><button class="cbtn" onclick="mClose('m-doc')">&#10005;</button></div>
+    <div class="mb2">
+      <div class="fg"><label class="fl">Nombre del documento *</label><input id="doc-name" placeholder="Factura #001 – Enero 2025"></div>
+      <div class="fr">
+        <div class="fg"><label class="fl">Tipo</label>
+          <select id="doc-type"><option value="factura">Factura</option><option value="recibo">Recibo</option><option value="contrato">Contrato</option><option value="presupuesto">Presupuesto</option><option value="otro">Otro</option></select>
+        </div>
+        <div class="fg"><label class="fl">Cliente</label><select id="doc-client"></select></div>
+      </div>
+      <div class="fr">
+        <div class="fg"><label class="fl">Monto (Q)</label><input id="doc-amount" type="number" placeholder="0"></div>
+        <div class="fg"><label class="fl">Fecha del documento</label><input id="doc-date" type="date"></div>
+      </div>
+      <div class="fg"><label class="fl">Estado</label>
+        <select id="doc-status"><option value="pendiente">Pendiente</option><option value="pagado">Pagado</option><option value="vencido">Vencido</option><option value="cancelado">Cancelado</option></select>
+      </div>
+      <div class="fg"><label class="fl">Notas</label><textarea id="doc-notes" placeholder="Descripción, referencia, condiciones..."></textarea></div>
+      <div class="fg">
+        <label class="fl">Archivo (PDF, imagen)</label>
+        <input type="file" id="doc-file" accept=".pdf,.png,.jpg,.jpeg,.webp" style="padding:6px">
+        <span style="font-size:11px;color:var(--tx2);margin-top:2px">El archivo se guarda localmente en tu navegador.</span>
+      </div>
+      <input type="hidden" id="doc-id">
+    </div>
+    <div class="mf">
+      <button class="btn btn-ghost" onclick="mClose('m-doc')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveDoc()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: TASK -->
+<div class="backdrop" id="m-task" onclick="bgClose(event,'m-task')">
+  <div class="modal">
+    <div class="mh"><span class="mt2" id="m-task-title">Nueva tarea</span><button class="cbtn" onclick="mClose('m-task')">&#10005;</button></div>
+    <div class="mb2">
+      <div class="fg"><label class="fl">Título *</label><input id="t-title" placeholder="Ej. Enviar propuesta a cliente XYZ"></div>
+      <div class="fr">
+        <div class="fg"><label class="fl">Fecha límite</label><input id="t-due" type="date"></div>
+        <div class="fg"><label class="fl">Prioridad</label>
+          <select id="t-priority"><option value="alta">Alta</option><option value="media" selected>Media</option><option value="baja">Baja</option></select>
+        </div>
+      </div>
+      <div class="fr">
+        <div class="fg"><label class="fl">Cliente relacionado</label><select id="t-client"></select></div>
+        <div class="fg"><label class="fl">Categoría</label>
+          <select id="t-cat"><option value="seguimiento">Seguimiento</option><option value="propuesta">Propuesta</option><option value="reunion">Reunión</option><option value="admin">Administración</option><option value="otro">Otro</option></select>
+        </div>
+      </div>
+      <div class="fg"><label class="fl">Notas</label><textarea id="t-notes" placeholder="Detalles adicionales..."></textarea></div>
+      <input type="hidden" id="t-id">
+    </div>
+    <div class="mf">
+      <button class="btn btn-ghost" onclick="mClose('m-task')">Cancelar</button>
+      <button class="btn btn-danger btn-sm" id="t-del-btn" style="margin-right:auto;display:none" onclick="delTask()">Eliminar</button>
+      <button class="btn btn-primary" onclick="saveTask()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: CONFIRM -->
+<div class="backdrop" id="m-confirm" style="z-index: 9999;" onclick="bgClose(event,'m-confirm')">
+  <div class="modal" style="max-width: 380px;">
+    <div class="mh">
+      <span class="mt2" id="confirm-title" style="font-weight: 600;">Confirmar acción</span>
+      <button class="cbtn" onclick="mClose('m-confirm')">&#10005;</button>
+    </div>
+    <div class="mb2" style="padding: 10px 0;">
+      <p id="confirm-message" style="font-size: 14px; color: var(--tx2); line-height: 1.5; margin: 0;"></p>
+    </div>
+    <div class="mf" style="justify-content: flex-end; gap: 8px;">
+      <button class="btn btn-ghost" onclick="mClose('m-confirm')">Cancelar</button>
+      <button class="btn btn-danger" id="confirm-ok-btn">Confirmar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: TRASH (ELIMINADOS) -->
+<div class="backdrop" id="m-trash" style="z-index: 9998;" onclick="bgClose(event,'m-trash')">
+  <div class="modal" style="max-width: 650px; width: 95%;">
+    <div class="mh" style="border-bottom: 1px solid var(--br); padding-bottom: 12px;">
+      <span class="mt2" id="m-trash-title" style="font-weight: 600; font-size: 16px;">📁 Papelera de Eliminados</span>
+      <button class="cbtn" onclick="mClose('m-trash')">&#10005;</button>
+    </div>
+    
+    <div class="trash-tabs" style="display:flex; border-bottom:1px solid var(--br); margin-bottom:15px; overflow-x:auto;">
+      <button class="t-tab" id="trash-tab-client" onclick="switchTrashTab('client')">Clientes</button>
+      <button class="t-tab" id="trash-tab-deal" onclick="switchTrashTab('deal')">Oportunidades</button>
+      <button class="t-tab" id="trash-tab-quote" onclick="switchTrashTab('quote')">Cotizaciones</button>
+      <button class="t-tab" id="trash-tab-doc" onclick="switchTrashTab('doc')">Documentos</button>
+      <button class="t-tab" id="trash-tab-task" onclick="switchTrashTab('task')">Tareas</button>
+    </div>
+
+    <div class="mb2" style="padding: 5px 0;">
+      <div id="trash-empty-state" style="text-align: center; padding: 40px 10px; color: var(--tx2); display: none;">
+        <div style="font-size: 32px; margin-bottom: 12px;">🗑️</div>
+        <p style="margin:0; font-size: 13px; font-weight: 500;">No hay elementos eliminados en esta sección</p>
+      </div>
+      <div id="trash-list" style="max-height: 320px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; padding-right: 4px;"></div>
+    </div>
+    <div class="mf" style="justify-content: space-between; align-items: center; border-top: 1px solid var(--br); padding-top: 12px;">
+      <button class="btn btn-ghost btn-sm" style="color: var(--pink); border: 1px solid var(--pink); padding: 5px 10px;" id="btn-empty-trash" onclick="emptyCurrentTrashTab()">Vaciar esta sección</button>
+      <button class="btn btn-primary" onclick="mClose('m-trash')">Cerrar</button>
+    </div>
+  </div>
+</div>
+
+</div> <!-- Closing crm-app -->
+
+<script>
+var STAGES = [
+  {id:'opp',         label:'Potential Opp',      color:'#B4B2A9'},
+  {id:'prospecting', label:'Prospecting',         color:'#7C6FE0'},
+  {id:'contactado',  label:'Contacted',           color:'#378ADD'},
+  {id:'reunion',     label:'Reunión diagnóstico', color:'#F5A623'},
+  {id:'propuesta',   label:'Propuesta enviada',   color:'#0FB8A0'},
+  {id:'negociacion', label:'Negociación',         color:'#D4537E'},
+  {id:'ganado',      label:'Won',                 color:'#639922'},
+  {id:'perdido',     label:'Lost',                color:'#E24B4A'}
+];
+var SERVICES = [
+  {id:'dc',  name:'Diagnóstico comercial',       price:3500,  type:'Puntual',      pillar:'Ventas'},
+  {id:'dpv', name:'Diseño proceso de ventas',    price:5000,  type:'Proyecto',     pillar:'Ventas'},
+  {id:'crm', name:'Implantación CRM',            price:6000,  type:'Proyecto',     pillar:'Ventas'},
+  {id:'pcm', name:'Partner comercial mensual',   price:8000,  type:'Retainer/mes', pillar:'Ventas'},
+  {id:'do',  name:'Diagnóstico operativo',       price:4000,  type:'Puntual',      pillar:'Consultoría'},
+  {id:'op',  name:'Optimización de procesos',    price:6000,  type:'Proyecto',     pillar:'Consultoría'},
+  {id:'ce',  name:'Consultoría estratégica',     price:5500,  type:'Proyecto',     pillar:'Consultoría'},
+  {id:'pem', name:'Partner estratégico mensual', price:8500,  type:'Retainer/mes', pillar:'Consultoría'},
+  {id:'web', name:'Diseño y desarrollo web',     price:5000,  type:'Proyecto',     pillar:'Tecnología'},
+  {id:'sw',  name:'Software a medida',           price:12000, type:'Proyecto',     pillar:'Tecnología'},
+  {id:'ai',  name:'Automatizaciones con IA',     price:5000,  type:'Proyecto',     pillar:'Tecnología'},
+  {id:'ms',  name:'Mantenimiento y soporte',     price:6000,  type:'Retainer/mes', pillar:'Tecnología'}
+];
+var PRIO_COLOR = {alta:'#e24b4a', media:'#F5A623', baja:'#0FB8A0'};
+var DOC_TYPE_LABEL = {factura:'Factura', recibo:'Recibo', contrato:'Contrato', presupuesto:'Presupuesto', otro:'Otro'};
+var DOC_STATUS_COLOR = {pendiente:'#F5A623', pagado:'#0FB8A0', vencido:'#e24b4a', cancelado:'#888780'};
+var DOC_ICON = {factura:'&#9632;', recibo:'&#9633;', contrato:'&#9650;', presupuesto:'&#9651;', otro:'&#9670;'};
+var TASK_TYPE_LABELS = {
+  'llamada': 'Llamada telefónica',
+  'correo': 'Correo electrónico',
+  'reunion': 'Reunión de seguimiento',
+  'whatsapp': 'Enviar WhatsApp',
+  'propuesta': 'Presentar o enviar propuesta',
+  'otro': 'Otro pendiente'
+};
+
+var db = {clients:[], deals:[], quotes:[], docs:[], tasks:[]};
+var selSvcs = [];
+var currentClient = null;
+var currentDealId = null;
+var currentTaskId = null;
+var editingQuoteId = null;
+var currentPreviewQuoteId = null;
+var finTab = 'all';
+
+function loadDB() {
+  try { var s = localStorage.getItem('integlis_crm4'); if (s) db = JSON.parse(s); } catch(e) {}
+  if (!db.clients) db.clients = [];
+  if (!db.deals) db.deals = [];
+  if (!db.quotes) db.quotes = [];
+  if (!db.docs) db.docs = [];
+  if (!db.tasks) db.tasks = [];
+  if (!db.trash) db.trash = [];
+}
+function saveDB() { localStorage.setItem('integlis_crm4', JSON.stringify(db)); }
+var confirmCallback = null;
+function customConfirm(message, callback) {
+  document.getElementById('confirm-message').textContent = message;
+  confirmCallback = callback;
+  document.getElementById('confirm-ok-btn').onclick = function() {
+    mClose('m-confirm');
+    if (confirmCallback) confirmCallback();
+  };
+  mOpen('m-confirm');
+}
+function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
+function Q(n) { return 'Q' + Number(n||0).toLocaleString('es-GT'); }
+function dt(d) {
+  if (!d) return '—';
+  var x = new Date(d + 'T12:00:00');
+  return x.toLocaleDateString('es-GT', {day:'2-digit', month:'short', year:'numeric'});
+}
+function ini(n) {
+  return (n||'?').split(' ').slice(0,2).map(function(w){ return w[0]; }).join('').toUpperCase();
+}
+var AC = ['#7C6FE0','#0FB8A0','#F5A623','#378ADD','#D4537E','#D85A30'];
+function ac(n) { return AC[(n||'').charCodeAt(0) % AC.length]; }
+function todayStr() { return new Date().toISOString().split('T')[0]; }
+function isOverdue(d) { return d && d < todayStr(); }
+function isToday(d) { return d === todayStr(); }
+
+// NAV
+function show(v) {
+  var views = document.querySelectorAll('.view');
+  for (var i = 0; i < views.length; i++) views[i].classList.remove('active');
+  var navBtns = document.querySelectorAll('.nav-btn');
+  for (var i = 0; i < navBtns.length; i++) navBtns[i].classList.remove('active');
+  document.getElementById('view-' + v).classList.add('active');
+  document.getElementById('nav-' + v).classList.add('active');
+  if (v === 'dashboard') renderDash();
+  if (v === 'pipeline') renderPipeline();
+  if (v === 'clients') { renderClients(); document.getElementById('clientsList').style.display = 'block'; document.getElementById('clientDetail').classList.remove('open'); }
+  if (v === 'quotes') renderQuotes();
+  if (v === 'finance') renderFinance();
+  if (v === 'tasks') renderTasks();
+  if (v === 'analytics') renderAnalytics();
+}
+
+function updatePendingBadge() {
+  var n = 0;
+  for (var i = 0; i < db.tasks.length; i++) { if (!db.tasks[i].done) n++; }
+  var el = document.getElementById('pending-count');
+  el.style.display = n ? 'inline-block' : 'none';
+  el.textContent = n;
+}
+
+// DASHBOARD
+function renderDash() {
+  updatePendingBadge();
+  var open = db.deals.filter(function(d){ return d.stage !== 'ganado' && d.stage !== 'perdido'; });
+  var won = db.deals.filter(function(d){ return d.stage === 'ganado'; });
+  var pendingDocs = db.docs.filter(function(d){ return d.status === 'pendiente'; });
+  var pendingTasks = db.tasks.filter(function(t){ return !t.done; });
+  document.getElementById('today-date').textContent = new Date().toLocaleDateString('es-GT', {weekday:'long', day:'numeric', month:'long', year:'numeric'});
+  var openVal = 0; for (var i = 0; i < open.length; i++) openVal += Number(open[i].value||0);
+  var wonVal = 0; for (var i = 0; i < won.length; i++) wonVal += Number(won[i].value||0);
+  var activeClients = db.clients.filter(function(c){ return c.status === 'Activo'; });
+  var metrics = [
+    {l:'Clientes totales', v:db.clients.length, c:'var(--purple)'},
+    {l:'Clientes activos', v:activeClients.length, c:'var(--teal)'},
+    {l:'Pipeline total', v:Q(openVal), c:'var(--amber)'},
+    {l:'Ingresos cerrados', v:Q(wonVal), c:'var(--teal)'},
+    {l:'Tareas pendientes', v:pendingTasks.length, c:'var(--amber)'},
+    {l:'Docs pendientes', v:pendingDocs.length, c:'#e24b4a'}
+  ];
+  var mHtml = '';
+  for (var i = 0; i < metrics.length; i++) {
+    mHtml += '<div class="mc"><div class="ml">' + metrics[i].l + '</div><div class="mv" style="color:' + metrics[i].c + '">' + metrics[i].v + '</div></div>';
+  }
+  document.getElementById('metrics').innerHTML = mHtml;
+
+  var rd = db.deals.slice(-5).reverse();
+  var ddHtml = '';
+  if (rd.length) {
+    for (var i = 0; i < rd.length; i++) {
+      var st = null;
+      for (var j = 0; j < STAGES.length; j++) { if (STAGES[j].id === rd[i].stage) { st = STAGES[j]; break; } }
+      if (!st) st = STAGES[0];
+      ddHtml += '<div style="display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--br)">'
+        + '<div><div style="font-size:13px;font-weight:500">' + rd[i].title + '</div>'
+        + '<span style="font-size:11px;background:' + st.color + '20;color:' + st.color + ';padding:2px 8px;border-radius:12px">' + st.label + '</span></div>'
+        + '<div style="font-size:13px;font-weight:500;color:var(--teal)">' + Q(rd[i].value) + '</div></div>';
+    }
+  } else { ddHtml = '<div class="empty" style="padding:1.5rem">Sin oportunidades</div>'; }
+  document.getElementById('dash-deals').innerHTML = ddHtml;
+
+  var rc = db.clients.slice(-5).reverse();
+  var dcHtml = '';
+  if (rc.length) {
+    for (var i = 0; i < rc.length; i++) {
+      var c = rc[i];
+      var bClass = c.status === 'Activo' ? 'ba' : c.status === 'Prospecto' ? 'bp' : 'bi2';
+      dcHtml += '<div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--br);cursor:pointer" onclick="openDetail(\'' + c.id + '\')">'
+        + '<div class="av" style="background:' + ac(c.name) + '20;color:' + ac(c.name) + '">' + ini(c.name) + '</div>'
+        + '<div style="flex:1"><div style="font-size:13px;font-weight:500">' + c.name + '</div><div style="font-size:12px;color:var(--tx2)">' + c.company + '</div></div>'
+        + '<span class="badge ' + bClass + '">' + c.status + '</span></div>';
+    }
+  } else { dcHtml = '<div class="empty" style="padding:1.5rem">Sin clientes</div>'; }
+  document.getElementById('dash-clients').innerHTML = dcHtml;
+
+  var pt = db.tasks.filter(function(t){ return !t.done; }).slice(0,5);
+  var dtHtml = pt.length ? pt.map(function(t){ return taskRow(t, true); }).join('') : '<div class="empty" style="padding:1.5rem">Sin tareas pendientes</div>';
+  document.getElementById('dash-tasks').innerHTML = dtHtml;
+
+  var rd2 = db.docs.slice(-4).reverse();
+  var ddoHtml = '';
+  if (rd2.length) {
+    for (var i = 0; i < rd2.length; i++) {
+      var d = rd2[i];
+      var cl = null; for (var j = 0; j < db.clients.length; j++) { if (db.clients[j].id === d.clientId) { cl = db.clients[j]; break; } }
+      ddoHtml += '<div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--br)">'
+        + '<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + d.name + '</div>'
+        + '<div style="font-size:12px;color:var(--tx2)">' + (cl ? cl.name : '—') + ' · ' + dt(d.date) + '</div></div>'
+        + (d.amount ? '<div style="font-size:12px;font-weight:500;color:var(--teal)">' + Q(d.amount) + '</div>' : '') + '</div>';
+    }
+  } else { ddoHtml = '<div class="empty" style="padding:1.5rem">Sin documentos</div>'; }
+  document.getElementById('dash-docs').innerHTML = ddoHtml;
+}
+
+// PIPELINE
+function renderPipeline() {
+  var html = '';
+  for (var i = 0; i < STAGES.length; i++) {
+    var st = STAGES[i];
+    var deals = db.deals.filter(function(d){ return d.stage === st.id; });
+    var cards = '';
+    for (var j = 0; j < deals.length; j++) {
+      var d = deals[j];
+      cards += '<div class="dc" draggable="true" ondragstart="dragDeal(event, \'' + d.id + '\')" ondragend="dragEndDeal(event)" style="border-left-color:' + st.color + '" onclick="openDealModal(\'' + d.id + '\',null,null)">'
+        + '<div class="dn">' + d.title + '</div>'
+        + '<div class="dco">' + (d.clientName || '—') + '</div>'
+        + '<div class="df"><span class="dv">' + Q(d.value) + '</span><span class="dd">' + (d.closeDate ? dt(d.closeDate) : '') + '</span></div></div>';
+    }
+    html += '<div class="kc" ondragover="allowDropDeal(event)" ondragenter="dragEnterColumn(event, \'' + st.id + '\')" ondragleave="dragLeaveColumn(event, \'' + st.id + '\')" ondrop="dropDeal(event, \'' + st.id + '\')">'
+      + '<div class="kch"><span><span class="dot" style="background:' + st.color + '"></span>' + st.label + '</span><span class="kb">' + deals.length + '</span></div>'
+      + '<div class="kc-cards-container" style="min-height:100px;">' + cards + '</div>'
+      + '<button class="adb" onclick="openDealModal(null,\'' + st.id + '\',null)">+ Agregar</button></div>';
+  }
+  document.getElementById('kanban').innerHTML = html;
+}
+
+// CLIENTS
+function renderClients() {
+  var q = (document.getElementById('c-search').value || '').toLowerCase();
+  var sf = document.getElementById('c-filter').value;
+  var list = db.clients.filter(function(c) {
+    var m = c.name.toLowerCase().indexOf(q) >= 0 || c.company.toLowerCase().indexOf(q) >= 0 || (c.email||'').toLowerCase().indexOf(q) >= 0;
+    return m && (!sf || c.status === sf);
+  });
+  document.getElementById('client-count').textContent = '(' + list.length + ')';
+  var html = '';
+  if (!list.length) {
+    html = '<tr><td colspan="6" style="padding:2rem;text-align:center;color:var(--tx2)">Sin clientes encontrados</td></tr>';
+  } else {
+    for (var i = 0; i < list.length; i++) {
+      var c = list[i];
+      var bClass = c.status === 'Activo' ? 'ba' : c.status === 'Prospecto' ? 'bp' : 'bi2';
+      html += '<tr>'
+        + '<td><div class="nc"><div class="av" style="background:' + ac(c.name) + '20;color:' + ac(c.name) + '">' + ini(c.name) + '</div>'
+        + '<div><div style="font-weight:500;cursor:pointer;color:var(--purple)" onclick="openDetail(\'' + c.id + '\')">' + c.name + '</div>'
+        + '<div style="font-size:11px;color:var(--tx2)">' + (c.email||'—') + '</div></div></div></td>'
+        + '<td>' + c.company + '</td><td>' + (c.phone||'—') + '</td>'
+        + '<td><span class="badge ' + bClass + '">' + c.status + '</span></td>'
+        + '<td>' + (c.industry||'—') + '</td>'
+        + '<td style="white-space:nowrap;display:flex;gap:5px">'
+        + '<button class="bi btn-sm" onclick="openDetail(\'' + c.id + '\')">&#128065;</button>'
+        + '<button class="bi btn-sm" onclick="openClientModal(\'' + c.id + '\')">&#9998;</button>'
+        + '<button class="bi btn-sm" style="color:#e24b4a" onclick="deleteClient(\'' + c.id + '\')">&#128465;</button>'
+        + '</td></tr>';
+    }
+  }
+  document.getElementById('clients-body').innerHTML = html;
+}
+
+function openDetail(id) {
+  var c = null;
+  for (var i = 0; i < db.clients.length; i++) { if (db.clients[i].id === id) { c = db.clients[i]; break; } }
+  if (!c) return;
+  currentClient = id;
+  show('clients');
+  document.getElementById('clientsList').style.display = 'none';
+  document.getElementById('clientDetail').classList.add('open');
+  document.getElementById('detail-name').textContent = c.name;
+  document.getElementById('detail-edit-btn').onclick = function(){ openClientModal(id); };
+  document.getElementById('detail-doc-btn').onclick = function(){ openDocModal(id, null); };
+  document.getElementById('detail-quote-btn').onclick = function(){ openQuoteModal(id); };
+
+  var deals = db.deals.filter(function(d){ return d.clientId === id; });
+  var quotes = db.quotes.filter(function(q){ return q.clientId === id; });
+  var docs = db.docs.filter(function(d){ return d.clientId === id; });
+  var tasks = db.tasks.filter(function(t){ return t.clientId === id; });
+
+  var bClass = c.status === 'Activo' ? 'ba' : c.status === 'Prospecto' ? 'bp' : 'bi2';
+  var dealsHtml = '';
+  if (deals.length) {
+    for (var i = 0; i < deals.length; i++) {
+      var d = deals[i]; var st = null;
+      for (var j = 0; j < STAGES.length; j++) { if (STAGES[j].id === d.stage) { st = STAGES[j]; break; } }
+      if (!st) st = STAGES[0];
+      dealsHtml += '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--br)">'
+        + '<div><div style="font-size:13px;font-weight:500">' + d.title + '</div>'
+        + '<span style="font-size:11px;background:' + st.color + '20;color:' + st.color + ';padding:2px 7px;border-radius:12px">' + st.label + '</span></div>'
+        + '<div style="font-size:13px;font-weight:500;color:var(--teal)">' + Q(d.value) + '</div></div>';
+    }
+  } else { dealsHtml = '<div style="color:var(--tx2);font-size:13px;padding:1rem 0;text-align:center">Sin oportunidades</div>'; }
+
+  var quotesHtml = '';
+  if (quotes.length) {
+    quotesHtml = '<table class="tbl"><thead><tr><th>N°</th><th>Fecha</th><th>Total</th><th></th></tr></thead><tbody>';
+    for (var i = 0; i < quotes.length; i++) {
+      var q = quotes[i];
+      quotesHtml += '<tr><td style="font-weight:500">COT-' + String(q.number).padStart(3,'0') + '</td><td>' + dt(q.date) + '</td>'
+        + '<td style="color:var(--teal);font-weight:500">' + Q(q.total) + '</td>'
+        + '<td style="display:flex;gap:4px;justify-content:flex-end;"><button class="btn btn-ghost btn-sm" style="color:var(--purple);padding:0 6px;" onclick="openQuoteModal(\'' + id + '\',\'' + q.id + '\')">Editar</button>'
+        + '<button class="btn btn-ghost btn-sm" style="padding:0 6px;" onclick="viewPDF(\'' + q.id + '\')">Ver</button></td></tr>';
+    }
+    quotesHtml += '</tbody></table>';
+  } else { quotesHtml = '<div style="color:var(--tx2);font-size:13px;padding:1rem 0;text-align:center">Sin cotizaciones</div>'; }
+
+  var docsHtml = '';
+  if (docs.length) {
+    for (var i = 0; i < docs.length; i++) {
+      var d = docs[i];
+      var sc = DOC_STATUS_COLOR[d.status] || '#888';
+      docsHtml += '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--br)">'
+        + '<div><div style="font-size:13px;font-weight:500">' + d.name + '</div>'
+        + '<div style="font-size:11px;color:var(--tx2)">' + (DOC_TYPE_LABEL[d.type]||'Otro') + ' · ' + dt(d.date) + '</div></div>'
+        + '<div style="display:flex;align-items:center;gap:8px">'
+        + (d.amount ? '<span style="font-size:12px;font-weight:500;color:var(--teal)">' + Q(d.amount) + '</span>' : '')
+        + '<span style="font-size:11px;padding:2px 7px;border-radius:12px;background:' + sc + '20;color:' + sc + '">' + (d.status||'—') + '</span>'
+        + (d.fileData ? '<button class="btn btn-ghost btn-sm" onclick="viewDoc(\'' + d.id + '\')">Ver</button>' : '')
+        + '</div></div>';
+    }
+  } else { docsHtml = '<div style="color:var(--tx2);font-size:13px;padding:1rem 0;text-align:center">Sin documentos</div>'; }
+
+  var tasksHtml = tasks.length ? tasks.map(function(t){ return taskRow(t, true); }).join('') : '<div style="color:var(--tx2);font-size:13px;padding:1rem 0;text-align:center">Sin tareas</div>';
+
+  var contractedServices = c.contractedServices || [];
+  var srvsHtml = '';
+  if (contractedServices.length) {
+    srvsHtml = '<div style="overflow-x:auto;"><table class="tbl"><thead><tr>'
+      + '<th>Servicio / Producto</th>'
+      + '<th>Estado</th>'
+      + '<th>Solicitud / Entrega</th>'
+      + '<th>Pago Inicial</th>'
+      + '<th>Mensual (Q)</th>'
+      + '<th>Anual (Q)</th>'
+      + '<th style="text-align:right">Acciones</th>'
+      + '</tr></thead><tbody>';
+    for (var i = 0; i < contractedServices.length; i++) {
+      var srv = contractedServices[i];
+      var statusBadgeClass = srv.status === 'activo' ? 'ba' : srv.status === 'solicitado' ? 'bp' : srv.status === 'en_progreso' ? 'bi2' : srv.status === 'entregado' ? 'bg' : 'bi2';
+      var statusLbl = srv.status === 'activo' ? 'Activo' : srv.status === 'solicitado' ? 'Solicitado' : srv.status === 'en_progreso' ? 'En Progreso' : srv.status === 'entregado' ? 'Entregado' : 'Cancelado / Suspendido';
+      
+      var datesVal = '<span style="font-weight:500">' + dt(srv.requestedDate) + '</span>';
+      if (srv.finishedDate) {
+        datesVal += ' &rarr; <span style="font-weight:500;color:var(--teal)">' + dt(srv.finishedDate) + '</span>';
+      } else {
+        datesVal += ' &rarr; <span style="color:var(--tx3);font-size:11px;font-style:italic">Pendiente</span>';
+      }
+      
+      var initialPay = srv.initialPayment ? Q(srv.initialPayment) : '—';
+      var monthlyPay = srv.monthlyPayment ? Q(srv.monthlyPayment) : '—';
+      var yearlyPay = srv.yearlyPayment ? Q(srv.yearlyPayment) : '—';
+      
+      var notesTip = srv.notes ? '<div style="font-size:11px;color:var(--tx2);margin-top:2px;font-style:italic;max-width:300px;white-space:normal;line-height:1.3;">' + srv.notes.replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</div>' : '';
+
+      srvsHtml += '<tr>'
+        + '<td><div style="font-weight:600;color:var(--purple)">' + srv.name + '</div>' + notesTip + '</td>'
+        + '<td><span class="badge ' + statusBadgeClass + '" style="font-size:10px;padding:2px 6px;">' + statusLbl + '</span></td>'
+        + '<td style="font-size:12px">' + datesVal + '</td>'
+        + '<td style="font-weight:500;color:var(--tx)">' + initialPay + '</td>'
+        + '<td style="font-weight:500;color:var(--teal)">' + monthlyPay + '</td>'
+        + '<td style="font-weight:500;color:var(--purple)">' + yearlyPay + '</td>'
+        + '<td style="text-align:right;white-space:nowrap;">'
+        + '<button class="btn btn-ghost btn-sm" style="color:var(--purple);padding:0 6px;" onclick="openContractedServiceModal(\'' + srv.id + '\')">Editar</button>'
+        + '<button class="btn btn-ghost btn-sm" style="color:var(--pink);padding:0 6px;" onclick="deleteContractedService(\'' + srv.id + '\')">Eliminar</button>'
+        + '</td>'
+        + '</tr>';
+    }
+    srvsHtml += '</tbody></table></div>';
+  } else {
+    srvsHtml = '<div style="color:var(--tx2);font-size:13px;padding:2rem 0;text-align:center">Este cliente no tiene servicios contratados o activos registrados aún.</div>';
+  }
+
+  document.getElementById('detail-body').innerHTML =
+    '<div class="grid-2col" style="margin-bottom:1rem">'
+    + '<div class="card"><div class="ct">Información de contacto</div>'
+    + '<div style="display:flex;align-items:center;gap:14px;margin-bottom:1rem">'
+    + '<div class="av av-lg" style="background:' + ac(c.name) + '20;color:' + ac(c.name) + '">' + ini(c.name) + '</div>'
+    + '<div><div style="font-size:16px;font-weight:500">' + c.name + '</div>'
+    + '<div style="font-size:13px;color:var(--tx2)">' + c.company + '</div>'
+    + '<span class="badge ' + bClass + '" style="margin-top:5px">' + c.status + '</span></div></div>'
+    + '<table style="width:100%;font-size:13px;border-collapse:collapse">'
+    + (c.email ? '<tr><td style="color:var(--tx2);padding:5px 0;width:80px">Email</td><td>' + c.email + '</td></tr>' : '')
+    + (c.phone ? '<tr><td style="color:var(--tx2);padding:5px 0">Tel</td><td>' + c.phone + '</td></tr>' : '')
+    + (c.industry ? '<tr><td style="color:var(--tx2);padding:5px 0">Industria</td><td>' + c.industry + '</td></tr>' : '')
+    + (c.web ? '<tr><td style="color:var(--tx2);padding:5px 0">Web</td><td><a href="' + c.web + '" target="_blank">' + c.web + '</a></td></tr>' : '')
+    + '</table>'
+    + (c.notes ? '<div style="margin-top:12px;padding:10px;background:var(--sur2);border-radius:8px;font-size:13px;color:var(--tx2);border-left:3px solid var(--purple)">' + c.notes + '</div>' : '')
+    + '</div>'
+    + '<div class="card" style="overflow-x:auto;-webkit-overflow-scrolling:touch;"><div class="ct">Oportunidades (' + deals.length + ') <button class="btn btn-ghost btn-sm" onclick="openDealModal(null,null,\'' + id + '\')">+</button></div>' + dealsHtml + '</div>'
+    + '</div>'
+    + '<div class="card" style="margin-bottom:1rem;overflow-x:auto;-webkit-overflow-scrolling:touch;">'
+    + '  <div class="ct" style="display:flex;justify-content:space-between;align-items:center;">Servicios Contratados / Activos (' + contractedServices.length + ') <button class="btn btn-primary btn-sm" style="padding:4px 10px;" onclick="openContractedServiceModal(null)">+ Agregar servicio</button></div>'
+    + '  ' + srvsHtml
+    + '</div>'
+    + '<div class="grid-2col" style="margin-bottom:1rem">'
+    + '<div class="card" style="overflow-x:auto;-webkit-overflow-scrolling:touch;"><div class="ct">Cotizaciones (' + quotes.length + ') <button class="btn btn-teal btn-sm" onclick="openQuoteModal(\'' + id + '\')">+ Nueva</button></div>' + quotesHtml + '</div>'
+    + '<div class="card"><div class="ct">Tareas (' + tasks.length + ') <button class="btn btn-ghost btn-sm" onclick="openTaskModal(\'' + id + '\',null)">+</button></div>' + tasksHtml + '</div>'
+    + '</div>'
+    + '<div class="card" style="overflow-x:auto;-webkit-overflow-scrolling:touch;"><div class="ct">Documentos (' + docs.length + ') <button class="btn btn-primary btn-sm" onclick="openDocModal(\'' + id + '\',null)">+ Subir</button></div>' + docsHtml + '</div>';
+}
+
+function closeDetail() {
+  document.getElementById('clientDetail').classList.remove('open');
+  document.getElementById('clientsList').style.display = 'block';
+  currentClient = null;
+}
+
+// CLIENT MODAL
+function openClientModal(id) {
+  var c = null;
+  if (id) { for (var i = 0; i < db.clients.length; i++) { if (db.clients[i].id === id) { c = db.clients[i]; break; } } }
+  document.getElementById('m-client-title').textContent = c ? 'Editar cliente' : 'Nuevo cliente';
+  document.getElementById('c-name').value = c ? c.name : '';
+  document.getElementById('c-company').value = c ? c.company : '';
+  document.getElementById('c-email').value = c ? (c.email||'') : '';
+  document.getElementById('c-phone').value = c ? (c.phone||'') : '';
+  document.getElementById('c-industry').value = c ? (c.industry||'') : '';
+  document.getElementById('c-web').value = c ? (c.web||'') : '';
+  document.getElementById('c-notes').value = c ? (c.notes||'') : '';
+  document.getElementById('c-status').value = c ? (c.status||'Prospecto') : 'Prospecto';
+  document.getElementById('c-id').value = c ? c.id : '';
+  mOpen('m-client');
+}
+function saveClient() {
+  var name = document.getElementById('c-name').value.trim();
+  var company = document.getElementById('c-company').value.trim();
+  if (!name || !company) { alert('Nombre y empresa son obligatorios'); return; }
+  var id = document.getElementById('c-id').value;
+  var data = {name:name, company:company,
+    email:document.getElementById('c-email').value.trim(),
+    phone:document.getElementById('c-phone').value.trim(),
+    industry:document.getElementById('c-industry').value.trim(),
+    web:document.getElementById('c-web').value.trim(),
+    notes:document.getElementById('c-notes').value.trim(),
+    status:document.getElementById('c-status').value,
+    createdAt:new Date().toISOString()};
+  if (id) {
+    for (var i = 0; i < db.clients.length; i++) { if (db.clients[i].id === id) { Object.assign(db.clients[i], data); break; } }
+  } else { data.id = uid(); db.clients.push(data); }
+  saveDB(); mClose('m-client'); renderClients(); renderDash();
+  if (currentClient) openDetail(currentClient);
+}
+function deleteClient(id) {
+  customConfirm('¿Mover este cliente y todos sus datos a la papelera?', function() {
+    if (!db.trash) db.trash = [];
+    var clientObj = null;
+    var clientIdx = -1;
+    for (var i = 0; i < db.clients.length; i++) {
+      if (db.clients[i].id === id) { clientObj = db.clients[i]; clientIdx = i; break; }
+    }
+    if (clientObj) {
+      db.clients.splice(clientIdx, 1);
+      db.trash.push({ id: id, type: 'client', data: clientObj, deletedAt: Date.now() });
+      for (var i = db.deals.length - 1; i >= 0; i--) {
+        if (db.deals[i].clientId === id) {
+          var d = db.deals.splice(i, 1)[0];
+          db.trash.push({ id: d.id, type: 'deal', data: d, deletedAt: Date.now(), cascadeFromClient: id });
+        }
+      }
+      for (var i = db.quotes.length - 1; i >= 0; i--) {
+        if (db.quotes[i].clientId === id) {
+          var q = db.quotes.splice(i, 1)[0];
+          db.trash.push({ id: q.id, type: 'quote', data: q, deletedAt: Date.now(), cascadeFromClient: id });
+        }
+      }
+      for (var i = db.docs.length - 1; i >= 0; i--) {
+        if (db.docs[i].clientId === id) {
+          var doc = db.docs.splice(i, 1)[0];
+          db.trash.push({ id: doc.id, type: 'doc', data: doc, deletedAt: Date.now(), cascadeFromClient: id });
+        }
+      }
+      for (var i = db.tasks.length - 1; i >= 0; i--) {
+        if (db.tasks[i].clientId === id) {
+          var t = db.tasks.splice(i, 1)[0];
+          db.trash.push({ id: t.id, type: 'task', data: t, deletedAt: Date.now(), cascadeFromClient: id });
+        }
+      }
+    }
+    saveDB(); renderClients(); renderDash();
+    var clientsList = document.getElementById('clientsList');
+    var isDetailOpen = document.getElementById('clientDetail') && document.getElementById('clientDetail').classList.contains('open');
+    if (isDetailOpen && currentClient === id) {
+      document.getElementById('clientDetail').classList.remove('open');
+      if (clientsList) clientsList.style.display = 'block';
+    }
+  });
+}
+
+// QUICK CLIENT (from deal modal)
+function openQuickClient() {
+  document.getElementById('qc-name').value = '';
+  document.getElementById('qc-company').value = '';
+  document.getElementById('qc-email').value = '';
+  document.getElementById('qc-phone').value = '';
+  document.getElementById('qc-status').value = 'Prospecto';
+  mOpen('m-quick-client');
+}
+function saveQuickClient() {
+  var name = document.getElementById('qc-name').value.trim();
+  var company = document.getElementById('qc-company').value.trim();
+  if (!name || !company) { alert('Nombre y empresa son obligatorios'); return; }
+  var newClient = {id:uid(), name:name, company:company,
+    email:document.getElementById('qc-email').value.trim(),
+    phone:document.getElementById('qc-phone').value.trim(),
+    status:document.getElementById('qc-status').value,
+    industry:'', web:'', notes:'', createdAt:new Date().toISOString()};
+  db.clients.push(newClient); saveDB(); renderClients(); renderDash();
+  
+  // Re-populate Deal Modal Dropdown
+  var dSel = document.getElementById('d-client');
+  if (dSel) {
+    dSel.innerHTML = '<option value="">— Sin cliente —</option>';
+    for (var i = 0; i < db.clients.length; i++) {
+      var c = db.clients[i];
+      var opt = document.createElement('option');
+      opt.value = c.id; opt.textContent = c.name + ' — ' + c.company;
+      dSel.appendChild(opt);
+    }
+    dSel.value = newClient.id;
+  }
+  
+  // Re-populate Quote Modal Dropdown
+  var qSel = document.getElementById('q-client');
+  if (qSel) {
+    qSel.innerHTML = '<option value="">— Seleccionar cliente —</option>';
+    for (var i = 0; i < db.clients.length; i++) {
+      var c = db.clients[i];
+      var opt = document.createElement('option');
+      opt.value = c.id; opt.textContent = c.name + ' — ' + c.company;
+      qSel.appendChild(opt);
+    }
+    qSel.value = newClient.id;
+    if (typeof updateLiveQuotePreview === 'function') {
+      updateLiveQuotePreview();
+    }
+  }
+  
+  mClose('m-quick-client');
+}
+
+// DEAL MODAL
+function openDealModal(id, stageId, clientId) {
+  var d = null;
+  if (id) { for (var i = 0; i < db.deals.length; i++) { if (db.deals[i].id === id) { d = db.deals[i]; break; } } }
+  currentDealId = id || null;
+  document.getElementById('m-deal-title').textContent = d ? 'Editar oportunidad' : 'Nueva oportunidad';
+  document.getElementById('d-title').value = d ? d.title : '';
+  document.getElementById('d-value').value = d ? (d.value||'') : '';
+  document.getElementById('d-notes').value = d ? (d.notes||'') : '';
+  document.getElementById('d-close').value = d ? (d.closeDate||'') : '';
+  document.getElementById('d-stage').value = d ? d.stage : (stageId||'opp');
+  document.getElementById('d-id').value = d ? d.id : '';
+  document.getElementById('d-del-btn').style.display = d ? 'inline-flex' : 'none';
+  var sel = document.getElementById('d-client');
+  sel.innerHTML = '<option value="">— Sin cliente —</option>';
+  for (var i = 0; i < db.clients.length; i++) {
+    var c = db.clients[i];
+    var opt = document.createElement('option');
+    opt.value = c.id; opt.textContent = c.name + ' — ' + c.company;
+    sel.appendChild(opt);
+  }
+  sel.value = d ? (d.clientId||'') : (clientId||'');
+
+  // Reset task picker fields inside the Deal Modal
+  document.getElementById('d-task-enable').checked = false;
+  document.getElementById('d-task-section').style.display = 'none';
+  document.getElementById('d-task-type').value = 'llamada';
+  document.getElementById('d-task-when').value = '7';
+  document.getElementById('d-task-title').value = '';
+  document.getElementById('d-task-title').placeholder = 'Ej. Volver a contactar';
+  document.getElementById('d-task-title').removeAttribute('data-manual');
+  calcDealTaskDate(); // compute the 1-week date by default
+
+  // Render existing tasks for this deal if editing
+  renderDealTasks(id);
+
+  mOpen('m-deal');
+}
+function saveDeal() {
+  var title = document.getElementById('d-title').value.trim();
+  if (!title) { alert('El título es obligatorio'); return; }
+  var clientId = document.getElementById('d-client').value;
+  var clientName = '';
+  for (var i = 0; i < db.clients.length; i++) { if (db.clients[i].id === clientId) { clientName = db.clients[i].name; break; } }
+  var id = document.getElementById('d-id').value;
+  var isNew = !id;
+  var generatedId = id || uid();
+  var data = {title:title, clientId:clientId, clientName:clientName,
+    stage:document.getElementById('d-stage').value,
+    value:document.getElementById('d-value').value,
+    closeDate:document.getElementById('d-close').value,
+    notes:document.getElementById('d-notes').value.trim(),
+    createdAt:new Date().toISOString()};
+  if (!isNew) {
+    for (var i = 0; i < db.deals.length; i++) { if (db.deals[i].id === id) { Object.assign(db.deals[i], data); break; } }
+  } else { data.id = generatedId; db.deals.push(data); }
+
+  // Check if a quick task is requested
+  if (document.getElementById('d-task-enable').checked) {
+    var taskTitleVal = document.getElementById('d-task-title').value.trim();
+    if (!taskTitleVal) {
+      // Use fallback placeholder title if empty
+      var typeVal = document.getElementById('d-task-type').value;
+      var cleanType = TASK_TYPE_LABELS[typeVal] || 'Seguimiento';
+      taskTitleVal = cleanType + ': ' + title;
+    }
+    var taskDueDate = document.getElementById('d-task-custom-date').value;
+    
+    var newTask = {
+      id: uid(),
+      title: taskTitleVal,
+      due: taskDueDate,
+      priority: 'media',
+      category: 'seguimiento',
+      clientId: clientId,
+      dealId: generatedId,
+      notes: 'Contacto de seguimiento para: ' + title,
+      done: false,
+      createdAt: new Date().toISOString()
+    };
+    db.tasks.push(newTask);
+  }
+
+  saveDB(); mClose('m-deal'); renderPipeline(); renderDash();
+  if (document.getElementById('view-tasks').classList.contains('active')) renderTasks();
+  if (currentClient) openDetail(currentClient);
+}
+function delDeal() {
+  if (!currentDealId) return;
+  customConfirm('¿Mover esta oportunidad a la papelera?', function() {
+    if (!db.trash) db.trash = [];
+    var dealObj = null;
+    var dealIdx = -1;
+    for (var i = 0; i < db.deals.length; i++) {
+       if (db.deals[i].id === currentDealId) { dealObj = db.deals[i]; dealIdx = i; break; }
+    }
+    if (dealObj) {
+      db.deals.splice(dealIdx, 1);
+      db.trash.push({ id: currentDealId, type: 'deal', data: dealObj, deletedAt: Date.now() });
+    }
+    saveDB(); mClose('m-deal'); renderPipeline(); renderDash();
+    if (document.getElementById('view-tasks').classList.contains('active')) renderTasks();
+    var isDetailOpen = document.getElementById('clientDetail') && document.getElementById('clientDetail').classList.contains('open');
+    if (isDetailOpen && currentClient) openDetail(currentClient);
+  });
+}
+
+// QUOTE
+function loadDefaultTerms() {
+  var termsEl = document.getElementById('q-terms');
+  if (termsEl) {
+    termsEl.value = "1. Propiedad intelectual de INTEGLIS S.A. sobre entregables y desarrollos hasta el pago correspondiente de la cotización.\n2. Todos los precios están expresados en Quetzales (Q) y no incluyen impuestos de ley a menos que se especifique lo contrario.\n3. Confidencialidad absoluta sobre los datos, estructura de negocios y operaciones comerciales del cliente.\n4. Garantía de soporte correctivo de 30 días calendario contados a partir de la fecha de entrega final.";
+    if (typeof updateLiveQuotePreview === 'function') {
+      updateLiveQuotePreview();
+    }
+  }
+}
+
+function updateLiveQuotePreview() {
+  var clientId = document.getElementById('q-client').value;
+  var clientName = "— Seleccionar cliente —";
+  var clientCompany = "Empresa de ejemplo (S.A.)";
+  if (typeof db !== 'undefined' && db.clients) {
+    for (var i = 0; i < db.clients.length; i++) {
+      if (db.clients[i].id === clientId) {
+        clientName = db.clients[i].name;
+        clientCompany = db.clients[i].company;
+        break;
+      }
+    }
+  }
+  
+  var clientNit = document.getElementById('q-client-nit').value.trim() || 'C/F';
+  var validity = parseInt(document.getElementById('q-validity').value) || 30;
+  var delivery = document.getElementById('q-delivery').value.trim();
+  var duration = document.getElementById('q-duration') ? document.getElementById('q-duration').value.trim() : '';
+  var notes = document.getElementById('q-notes').value.trim();
+  var terms = document.getElementById('q-terms') ? document.getElementById('q-terms').value.trim() : '';
+  
+  // Date calculation
+  var qDateEl = document.getElementById('q-date');
+  var dateStr = qDateEl && qDateEl.value ? qDateEl.value : new Date().toISOString().split('T')[0];
+  var exp = new Date(dateStr + 'T12:00:00');
+  exp.setDate(exp.getDate() + validity);
+  var expStr = exp.toISOString().split('T')[0];
+  
+  var subtotal = 0;
+  var rows = '';
+  if (!selSvcs || selSvcs.length === 0) {
+    rows = '<tr><td colspan="3" style="text-align:center; padding: 24px 0; color: #999; font-style: italic; font-size:12px;">Ningún servicio seleccionado. Elige servicios de la lista a la izquierda.</td></tr>';
+  } else {
+    for (var i = 0; i < selSvcs.length; i++) {
+      var item = selSvcs[i];
+      var customName = item.name || '';
+      var customPrice = parseFloat(item.price) || 0;
+      var customDesc = item.description || '';
+      subtotal += customPrice;
+      
+      var descHtml = customDesc ? '<div style="font-size:10px;color:#666;font-weight:400;margin-top:2px;white-space:pre-line;line-height:1.3;">' + customDesc.replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</div>' : '';
+      rows += '<tr style="background:' + (i%2===0?'#fff':'#fafafa') + '; border-bottom:1px solid #f0f0f0;">'
+        + '<td style="padding:6px 4px;font-weight:500;text-align:left;vertical-align:top;font-size:11px;">'
+        + '<div>' + customName + '</div>' + descHtml
+        + '</td>'
+        + '<td style="padding:6px 4px;text-align:center;color:#888;vertical-align:top;font-size:10px;">' + item.type + '</td>'
+        + '<td style="padding:6px 4px;text-align:right;color:#0FB8A0;font-weight:500;vertical-align:top;font-size:11px;">' + Q(customPrice) + '</td></tr>';
+    }
+  }
+  
+  var discValue = parseFloat(document.getElementById('q-discount-value').value) || 0;
+  var discType = document.getElementById('q-discount-type').value;
+  var discountAmount = 0;
+  if (discType === 'porcentaje') {
+    discountAmount = Math.max(0, subtotal * (discValue / 100));
+  } else {
+    discountAmount = Math.max(0, Math.min(subtotal, discValue));
+  }
+  
+  var baseTotal = Math.max(0, subtotal - discountAmount);
+  var applyIva = document.getElementById('q-apply-iva') ? (document.getElementById('q-apply-iva').value === 'yes') : false;
+  var ivaAmount = applyIva ? (baseTotal * 0.12) : 0;
+  var total = baseTotal + ivaAmount;
+  
+  var calculationLines = '<div style="width:100%; display:flex; flex-direction:column; align-items:flex-end; gap:3px; border-top:1.5px solid #7C6FE0; padding-top:6px; font-size:11px; color:#555;">';
+  if (discountAmount > 0 || applyIva) {
+    calculationLines += '<div style="display:flex; justify-content:space-between; width:160px;">'
+      + '<span>Subtotal:</span>'
+      + '<span style="font-weight:500; color:#333;">' + Q(subtotal) + '</span>'
+      + '</div>';
+  }
+  
+  if (discountAmount > 0) {
+    var discTypeText = discType === 'porcentaje' ? discValue + '%' : 'Fijo';
+    calculationLines += '<div style="display:flex; justify-content:space-between; width:160px; color:#e24b4a;">'
+      + '<span>Descuento (' + discTypeText + '):</span>'
+      + '<span style="font-weight:500;">-' + Q(discountAmount) + '</span>'
+      + '</div>';
+  }
+  
+  if (applyIva) {
+    calculationLines += '<div style="display:flex; justify-content:space-between; width:160px; color:#a0aec0;">'
+      + '<span>Subtotal Neto:</span>'
+      + '<span style="font-weight:500; color:#333;">' + Q(baseTotal) + '</span>'
+      + '</div>';
+    
+    calculationLines += '<div style="display:flex; justify-content:space-between; width:160px; color:#0FB8A0;">'
+      + '<span>IVA (12%):</span>'
+      + '<span style="font-weight:500;">+' + Q(ivaAmount) + '</span>'
+      + '</div>';
+  }
+  
+  var totalLabel = applyIva ? 'Total con IVA:' : 'Total Neto:';
+  calculationLines += '<div style="display:flex; justify-content:space-between; width:160px; font-size:13px; font-weight:700; color:#7C6FE0; margin-top:2px;">'
+    + '<span>' + totalLabel + '</span>'
+    + '<span>' + Q(total) + '</span>'
+    + '</div>'
+    + '</div>';
+    
+  var liveHtml = '<div style="border-radius:6px 6px 0 0; background:#0F0F1E; color:#fff; padding:10px 12px; font-family:sans-serif; text-align:left;">'
+    + '<div style="display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid rgba(255,255,255,0.15); padding-bottom:6px;">'
+    + '<div style="display:flex; align-items:center; gap:4px;">'
+    + '<svg width="18" height="18" viewBox="0 0 28 28" fill="none"><circle cx="8" cy="14" r="5" fill="#7C6FE0"/><circle cx="20" cy="7" r="5" fill="#7C6FE0"/><circle cx="20" cy="21" r="5" fill="#0FB8A0"/></svg>'
+    + '<span style="font-size:11px; font-weight:700; font-family:Georgia,serif; letter-spacing:0.5px; color:#fff">INTEGLIS, S.A.</span>'
+    + '</div>'
+    + '<div style="text-align:right; font-size:10px; font-weight:600; color:#7C6FE0;">COTIZACIÓN</div>'
+    + '</div>'
+    + '<div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:6px; font-size:9px;">'
+    + '<div>'
+    + '<div style="color:rgba(255,255,255,0.45); text-transform:uppercase; font-size:7px; letter-spacing:0.3px; margin-bottom:1px;">Preparado para</div>'
+    + '<div style="font-weight:600; color:#fff;">' + clientName + '</div>'
+    + '<div style="color:rgba(255,255,255,0.7);">' + clientCompany + '</div>'
+    + '<div style="color:rgba(255,255,255,0.5);">NIT: ' + clientNit + '</div>'
+    + '</div>'
+    + '<div style="text-align:right;">'
+    + '<div style="color:rgba(255,255,255,0.45); text-transform:uppercase; font-size:7px; letter-spacing:0.3px; margin-bottom:1px;">Emisión y validez</div>'
+    + '<div><strong>Fecha:</strong> ' + dt(dateStr) + '</div>'
+    + '<div><strong>Vence:</strong> ' + dt(expStr) + '</div>'
+    + (delivery ? '<div style="color:#0FB8A0;"><strong>Plazo:</strong> ' + delivery + '</div>' : '')
+    + (duration ? '<div style="color:#10B981;"><strong>Duración:</strong> ' + duration + '</div>' : '')
+    + '</div>'
+    + '</div>'
+    + '</div>'
+    + '<div style="padding:10px 12px; background:#fff; border-radius:0 0 6px 6px; border:1px solid #e0e0e0; border-top:none; text-align:left;">'
+    + '<table style="width:100%; border-collapse:collapse; font-size:10px; margin-bottom:8px;">'
+    + '<thead>'
+    + '<tr style="border-bottom:1.5px solid #7C6FE0; color:#888; font-weight:600; text-transform:uppercase; font-size:8px;">'
+    + '<th style="text-align:left; padding:3px;">Servicio</th>'
+    + '<th style="text-align:center; padding:3px; width:60px;">Modalidad</th>'
+    + '<th style="text-align:right; padding:3px; width:70px;">Precio</th>'
+    + '</tr>'
+    + '</thead>'
+    + '<tbody>' + rows + '</tbody>'
+    + '</table>'
+    + calculationLines
+    + (delivery ? '<div style="margin-top:8px; padding:4px 6px; background:#f7fafc; border-radius:4px; font-size:9px; color:#4a5568; border-left:2px solid #0FB8A0;"><strong>Plazo de entrega:</strong><div style="margin-top:1px;">' + delivery + '</div></div>' : '')
+    + (duration ? '<div style="margin-top:4px; padding:4px 6px; background:#f0faf6; border-radius:4px; font-size:9px; color:#1a5235; border-left:2px solid #10B981;"><strong>Duración del servicio:</strong><div style="margin-top:1px;">' + duration + '</div></div>' : '')
+    + (notes ? '<div style="margin-top:4px; padding:4px 6px; background:#f8f8fe; border-radius:4px; font-size:9px; color:#555; border-left:2px solid #7C6FE0;"><strong>Condiciones:</strong><div style="white-space:pre-line; margin-top:1px;">' + notes + '</div></div>' : '')
+    + (terms ? '<div style="margin-top:4px; padding:4px 6px; background:#fafafa; border-radius:4px; font-size:9px; color:#555; border-left:2px solid #a0aec0;"><strong>Términos y Condiciones:</strong><div style="white-space:pre-line; margin-top:1px;">' + terms + '</div></div>' : '')
+    + '<div style="margin-top:10px; padding-top:4px; border-top:1px solid #f0f0f0; font-size:8px; color:#bbb; text-align:center;">'
+    + 'INTEGLIS, S.A. · Tu partner para crecer con tecnología · integlis.com</div>'
+    + '</div>';
+    
+  var bocetoEl = document.getElementById('q-live-boceto');
+  if (bocetoEl) {
+    bocetoEl.innerHTML = liveHtml;
+  }
+}
+function openQuoteModal(clientId, quoteId) {
+  var titleEl = document.getElementById('q-modal-title');
+  var sel = document.getElementById('q-client');
+  sel.innerHTML = '<option value="">— Seleccionar cliente —</option>';
+  for (var i = 0; i < db.clients.length; i++) {
+    var c = db.clients[i];
+    var opt = document.createElement('option');
+    opt.value = c.id; opt.textContent = c.name + ' — ' + c.company;
+    sel.appendChild(opt);
+  }
+
+  if (quoteId) {
+    editingQuoteId = quoteId;
+    if (titleEl) titleEl.textContent = 'Editar cotización';
+    
+    var q = null;
+    for (var i = 0; i < db.quotes.length; i++) {
+      if (db.quotes[i].id === quoteId) { q = db.quotes[i]; break; }
+    }
+    if (q) {
+      if (q.clientId) sel.value = q.clientId;
+      document.getElementById('q-date').value = q.date || new Date().toISOString().split('T')[0];
+      document.getElementById('q-validity').value = q.validity !== undefined ? q.validity : 30;
+      document.getElementById('q-notes').value = q.notes || '';
+      document.getElementById('q-terms').value = q.terms !== undefined ? q.terms : '';
+      document.getElementById('q-client-nit').value = q.clientNit || 'C/F';
+      document.getElementById('q-discount-value').value = q.discountValue !== undefined ? q.discountValue : 0;
+      document.getElementById('q-discount-type').value = q.discountType || 'porcentaje';
+      document.getElementById('q-apply-iva').value = q.applyIva ? 'yes' : 'no';
+      document.getElementById('q-delivery').value = q.delivery || '';
+      if (document.getElementById('q-duration')) document.getElementById('q-duration').value = q.duration || '';
+      
+      selSvcs = [];
+      if (q.items && q.items.length) {
+        for (var j = 0; j < q.items.length; j++) {
+          var it = q.items[j];
+          selSvcs.push({
+            id: it.id,
+            name: it.name,
+            price: it.price,
+            type: it.type || '',
+            description: it.description || ''
+          });
+        }
+      }
+    }
+  } else {
+    editingQuoteId = null;
+    if (titleEl) titleEl.textContent = 'Nueva cotización';
+    
+    selSvcs = [];
+    if (clientId) sel.value = clientId;
+    document.getElementById('q-date').value = new Date().toISOString().split('T')[0];
+    document.getElementById('q-validity').value = 30;
+    document.getElementById('q-notes').value = '';
+    document.getElementById('q-terms').value = '';
+    document.getElementById('q-client-nit').value = 'C/F';
+    document.getElementById('q-discount-value').value = 0;
+    document.getElementById('q-discount-type').value = 'porcentaje';
+    document.getElementById('q-apply-iva').value = 'no';
+    document.getElementById('q-delivery').value = '';
+    if (document.getElementById('q-duration')) document.getElementById('q-duration').value = '';
+  }
+  
+  renderSvcPicker();
+  mOpen('m-quote');
+  updateLiveQuotePreview();
+}
+function renderSvcPicker() {
+  var html = '';
+  for (var i = 0; i < SERVICES.length; i++) {
+    var s = SERVICES[i];
+    var on = false;
+    for (var k = 0; k < selSvcs.length; k++) {
+      if (selSvcs[k].id === s.id) { on = true; break; }
+    }
+    html += '<div class="so ' + (on?'on':'') + '" onclick="toggleSvc(\'' + s.id + '\')">'
+      + '<div class="sn">' + s.name + '</div><div class="sp">' + Q(s.price) + ' · ' + s.type + '</div></div>';
+  }
+  document.getElementById('svc-picker').innerHTML = html;
+  renderQPrev();
+}
+function toggleSvc(id) {
+  syncEditedQuoteItems();
+  var idx = -1;
+  for (var i = 0; i < selSvcs.length; i++) {
+    if (selSvcs[i].id === id) { idx = i; break; }
+  }
+  if (idx >= 0) {
+    selSvcs.splice(idx, 1);
+  } else {
+    var original = null;
+    for (var j = 0; j < SERVICES.length; j++) {
+      if (SERVICES[j].id === id) { original = SERVICES[j]; break; }
+    }
+    if (original) {
+      selSvcs.push({
+        id: original.id,
+        name: original.name,
+        price: original.price,
+        type: original.type,
+        description: ''
+      });
+    }
+  }
+  renderSvcPicker();
+}
+function syncEditedQuoteItems() {
+  var elements = document.querySelectorAll('.q-prev-item');
+  for (var i = 0; i < elements.length; i++) {
+    var el = elements[i];
+    var id = el.getAttribute('data-id');
+    var customName = el.querySelector('.q-item-name').value;
+    var customPrice = parseFloat(el.querySelector('.q-item-price').value) || 0;
+    var customDesc = el.querySelector('.q-item-desc').value;
+    
+    for (var j = 0; j < selSvcs.length; j++) {
+      if (selSvcs[j].id === id) {
+        selSvcs[j].name = customName;
+        selSvcs[j].price = customPrice;
+        selSvcs[j].description = customDesc;
+        break;
+      }
+    }
+  }
+}
+function updateQuoteTotals() {
+  var subtotal = 0;
+  var items = document.querySelectorAll('.q-prev-item');
+  for (var i = 0; i < items.length; i++) {
+    var priceInput = items[i].querySelector('.q-item-price');
+    if (priceInput) {
+      var price = parseFloat(priceInput.value) || 0;
+      subtotal += price;
+    }
+  }
+  
+  var discValue = parseFloat(document.getElementById('q-discount-value').value) || 0;
+  var discType = document.getElementById('q-discount-type').value;
+  
+  var discountAmount = 0;
+  if (discType === 'porcentaje') {
+    discountAmount = Math.max(0, subtotal * (discValue / 100));
+  } else {
+    discountAmount = Math.max(0, Math.min(subtotal, discValue));
+  }
+  
+  var baseTotal = Math.max(0, subtotal - discountAmount);
+  var applyIva = document.getElementById('q-apply-iva') ? (document.getElementById('q-apply-iva').value === 'yes') : false;
+  var ivaAmount = applyIva ? (baseTotal * 0.12) : 0;
+  var total = baseTotal + ivaAmount;
+  
+  var summaryEl = document.getElementById('q-totals-summary');
+  if (summaryEl) {
+    var discountText = '';
+    if (discountAmount > 0) {
+      discountText = '<div style="display:flex;justify-content:space-between;font-size:13px;color:var(--pink);padding:4px 0;">'
+        + '<span>Descuento (' + (discType === 'porcentaje' ? discValue + '%' : 'Fijo') + ')</span>'
+        + '<span>-' + Q(discountAmount) + '</span>'
+        + '</div>';
+    }
+    
+    var ivaText = '';
+    if (applyIva) {
+      ivaText = '<div style="display:flex;justify-content:space-between;font-size:13px;color:var(--purple);padding:4px 0;">'
+        + '<span>IVA (12%)</span>'
+        + '<span>+' + Q(ivaAmount) + '</span>'
+        + '</div>';
+    }
+    
+    var totalLabel = applyIva ? 'Total con IVA' : 'Total Neto';
+    
+    summaryEl.innerHTML = '<div style="display:flex;justify-content:space-between;font-size:13px;padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.05)">'
+      + '<span>Subtotal</span><span style="font-weight:500">' + Q(subtotal) + '</span>'
+      + '</div>'
+      + discountText
+      + ivaText
+      + '<div style="display:flex;justify-content:space-between;font-size:15px;font-weight:600;padding-top:10px;color:var(--teal)">'
+      + '<span>' + totalLabel + '</span><span>' + Q(total) + '</span>'
+      + '</div>';
+  }
+  if (typeof updateLiveQuotePreview === 'function') {
+    updateLiveQuotePreview();
+  }
+}
+function renderQPrev() {
+  var el = document.getElementById('q-preview');
+  if (!selSvcs.length) {
+    el.innerHTML = '<div style="margin-top:1rem;padding:12px;text-align:center;color:var(--tx3);font-size:13px;border:1px dashed var(--br);border-radius:8px;">Ningún servicio seleccionado actualmente.</div>';
+    if (typeof updateLiveQuotePreview === 'function') {
+      updateLiveQuotePreview();
+    }
+    return;
+  }
+  
+  var html = '<div style="margin-top:1.5rem;">'
+    + '<label class="fl" style="font-weight:600; font-size:13px; color:var(--purple); display:block; margin-bottom:10px;">📋 Detalle / Alcance personalizado de Servicios Seleccionados</label>';
+  
+  for (var i = 0; i < selSvcs.length; i++) {
+    var it = selSvcs[i];
+    var customName = it.name || '';
+    var customPrice = it.price !== undefined ? it.price : 0;
+    var customDesc = it.description || '';
+    
+    html += '<div class="q-prev-item" data-id="' + it.id + '" style="border:1px solid var(--br); border-radius:10px; padding:12px; margin-bottom:12px; background:rgba(255,255,255,0.02)">'
+      + '<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">'
+      + '<span style="font-size:12px; font-weight:600; color:var(--purple); text-transform:uppercase; letter-spacing:0.5px;">Servicio #' + (i+1) + ': ' + it.id.toUpperCase() + '</span>'
+      + '<button type="button" onclick="toggleSvc(\'' + it.id + '\')" style="background:none; border:none; color:var(--pink); font-size:11px; font-weight:500; cursor:pointer;">&#10005; Quitar</button>'
+      + '</div>'
+      + '<div style="display:grid; grid-template-columns:2fr 1fr; gap:8px; margin-bottom:8px;">'
+      + '<div class="fg" style="margin-bottom:0">'
+      + '<label class="fl">Nombre en cotización</label>'
+      + '<input type="text" class="q-item-name" value="' + customName.replace(/"/g, '&quot;') + '" oninput="syncEditedQuoteItems(); updateLiveQuotePreview();" style="background:#fff; border:1px solid var(--br2); color:var(--navy); padding:5px 8px; border-radius:var(--r); font-size:12px; width:100%;">'
+      + '</div>'
+      + '<div class="fg" style="margin-bottom:0">'
+      + '<label class="fl">Precio (Q)</label>'
+      + '<input type="number" class="q-item-price" value="' + customPrice + '" oninput="syncEditedQuoteItems(); updateQuoteTotals(); updateLiveQuotePreview();" style="background:#fff; border:1px solid var(--br2); color:var(--navy); padding:5px 8px; border-radius:var(--r); font-size:12px; width:100%;">'
+      + '</div>'
+      + '</div>'
+      + '<div class="fg" style="margin-bottom:0">'
+      + '<label class="fl">Descripción específica / ¿Qué se hará?</label>'
+      + '<textarea class="q-item-desc" placeholder="Escriba los detalles de la propuesta, software, alcance, entregables, etc." oninput="syncEditedQuoteItems(); updateLiveQuotePreview();" style="background:#fff; border:1px solid var(--br2); color:var(--navy); padding:6px 8px; border-radius:var(--r); font-size:12px; width:100%; height:55px; min-height:55px; font-family:inherit; resize:vertical;">' + customDesc.replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</textarea>'
+      + '</div>'
+      + '</div>';
+  }
+  
+  html += '<div id="q-totals-summary" style="margin-top:1rem;padding:12px 14px;background:var(--sur2);border-radius:10px;border:1px solid var(--br)">'
+    + '</div>'
+    + '</div>';
+    
+  el.innerHTML = html;
+  updateQuoteTotals();
+}
+function saveQuote() {
+  var clientId = document.getElementById('q-client').value;
+  if (!clientId) { alert('Selecciona un cliente'); return; }
+  
+  syncEditedQuoteItems();
+  
+  if (!selSvcs.length) { alert('Selecciona al menos un servicio'); return; }
+  var client = null;
+  for (var i = 0; i < db.clients.length; i++) { if (db.clients[i].id === clientId) { client = db.clients[i]; break; } }
+  if (!client) { alert('Cliente no encontrado'); return; }
+  
+  var items = [];
+  var subtotal = 0;
+  for (var i = 0; i < selSvcs.length; i++) {
+    var it = selSvcs[i];
+    items.push({
+      id: it.id,
+      name: it.name,
+      price: it.price,
+      type: it.type,
+      description: it.description || ''
+    });
+    subtotal += it.price;
+  }
+  
+  var discValue = parseFloat(document.getElementById('q-discount-value').value) || 0;
+  var discType = document.getElementById('q-discount-type').value;
+  
+  var discountAmount = 0;
+  if (discType === 'porcentaje') {
+    discountAmount = Math.max(0, subtotal * (discValue / 100));
+  } else {
+    discountAmount = Math.max(0, Math.min(subtotal, discValue));
+  }
+  
+  var baseTotal = Math.max(0, subtotal - discountAmount);
+  var applyIva = document.getElementById('q-apply-iva') ? (document.getElementById('q-apply-iva').value === 'yes') : false;
+  var ivaAmount = applyIva ? (baseTotal * 0.12) : 0;
+  var total = baseTotal + ivaAmount;
+  var clientNit = document.getElementById('q-client-nit').value.trim() || 'C/F';
+  var termsVal = document.getElementById('q-terms') ? document.getElementById('q-terms').value.trim() : '';
+  
+  if (editingQuoteId) {
+    var qIndex = -1;
+    for (var i = 0; i < db.quotes.length; i++) {
+      if (db.quotes[i].id === editingQuoteId) { qIndex = i; break; }
+    }
+    if (qIndex >= 0) {
+      db.quotes[qIndex].clientId = clientId;
+      db.quotes[qIndex].clientName = client.name;
+      db.quotes[qIndex].clientCompany = client.company;
+      db.quotes[qIndex].clientNit = clientNit;
+      db.quotes[qIndex].items = items;
+      db.quotes[qIndex].subtotal = subtotal;
+      db.quotes[qIndex].discountValue = discValue;
+      db.quotes[qIndex].discountType = discType;
+      db.quotes[qIndex].discountAmount = discountAmount;
+      db.quotes[qIndex].applyIva = applyIva;
+      db.quotes[qIndex].ivaAmount = ivaAmount;
+      db.quotes[qIndex].total = total;
+      db.quotes[qIndex].validity = document.getElementById('q-validity').value||30;
+      db.quotes[qIndex].delivery = document.getElementById('q-delivery').value.trim();
+      db.quotes[qIndex].duration = document.getElementById('q-duration') ? document.getElementById('q-duration').value.trim() : '';
+      db.quotes[qIndex].notes = document.getElementById('q-notes').value.trim();
+      db.quotes[qIndex].terms = termsVal;
+      db.quotes[qIndex].date = document.getElementById('q-date').value || new Date().toISOString().split('T')[0];
+    }
+  } else {
+    var quote = {
+      id: uid(),
+      number: db.quotes.length+1,
+      clientId: clientId,
+      clientName: client.name,
+      clientCompany: client.company,
+      clientNit: clientNit,
+      items: items,
+      subtotal: subtotal,
+      discountValue: discValue,
+      discountType: discType,
+      discountAmount: discountAmount,
+      applyIva: applyIva,
+      ivaAmount: ivaAmount,
+      total: total,
+      validity: document.getElementById('q-validity').value||30,
+      delivery: document.getElementById('q-delivery').value.trim(),
+      duration: document.getElementById('q-duration') ? document.getElementById('q-duration').value.trim() : '',
+      notes: document.getElementById('q-notes').value.trim(),
+      terms: termsVal,
+      date: document.getElementById('q-date').value || new Date().toISOString().split('T')[0]
+    };
+    db.quotes.push(quote);
+  }
+  
+  saveDB();
+  mClose('m-quote');
+  renderQuotes();
+  if (currentClient) openDetail(currentClient);
+}
+function renderQuotes() {
+  var el = document.getElementById('quotes-body');
+  if (!db.quotes.length) { el.innerHTML = '<div class="empty">Sin cotizaciones aún.</div>'; return; }
+  var rows = db.quotes.slice().reverse();
+  var html = '<div class="card" style="padding:0;overflow:hidden"><table class="tbl"><thead><tr><th>N°</th><th>Cliente</th><th>Fecha</th><th>Servicios</th><th>Total</th><th>Acciones</th></tr></thead><tbody>';
+  for (var i = 0; i < rows.length; i++) {
+    var q = rows[i];
+    html += '<tr><td style="font-weight:500">COT-' + String(q.number).padStart(3,'0') + '</td>'
+      + '<td><div style="font-weight:500">' + q.clientName + '</div><div style="font-size:12px;color:var(--tx2)">' + q.clientCompany + '</div></td>'
+      + '<td>' + dt(q.date) + '</td><td>' + q.items.length + ' servicio' + (q.items.length>1?'s':'') + '</td>'
+      + '<td style="font-weight:500;color:var(--teal)">' + Q(q.total) + '</td>'
+      + '<td style="display:flex;gap:5px"><button class="btn btn-ghost btn-sm" style="color:var(--purple)" onclick="openQuoteModal(null,\'' + q.id + '\')">Editar</button>'
+      + '<button class="btn btn-ghost btn-sm" onclick="viewPDF(\'' + q.id + '\')">Ver</button>'
+      + '<button class="bi" onclick="deleteQuote(\'' + q.id + '\')">&#128465;</button></td></tr>';
+  }
+  html += '</tbody></table></div>';
+  el.innerHTML = html;
+}
+function deleteQuote(id) {
+  customConfirm('¿Mover esta cotización a la papelera?', function() {
+    if (!db.trash) db.trash = [];
+    var quoteObj = null;
+    var quoteIdx = -1;
+    for (var i = 0; i < db.quotes.length; i++) {
+      if (db.quotes[i].id === id) { quoteObj = db.quotes[i]; quoteIdx = i; break; }
+    }
+    if (quoteObj) {
+      db.quotes.splice(quoteIdx, 1);
+      db.trash.push({ id: id, type: 'quote', data: quoteObj, deletedAt: Date.now() });
+    }
+    saveDB(); renderQuotes(); renderDash();
+    var isDetailOpen = document.getElementById('clientDetail') && document.getElementById('clientDetail').classList.contains('open');
+    if (isDetailOpen && currentClient) openDetail(currentClient);
+  });
+}
+function viewPDF(id) {
+  currentPreviewQuoteId = id;
+  var q = null;
+  for (var i = 0; i < db.quotes.length; i++) { if (db.quotes[i].id === id) { q = db.quotes[i]; break; } }
+  if (!q) return;
+  var exp = new Date(q.date + 'T12:00:00'); exp.setDate(exp.getDate() + Number(q.validity));
+  var rows = '';
+  for (var i = 0; i < q.items.length; i++) {
+    var item = q.items[i];
+    var descHtml = item.description ? '<div style="font-size:11px;color:#666;font-weight:400;margin-top:4px;white-space:pre-line;line-height:1.4;">' + item.description + '</div>' : '';
+    rows += '<tr style="background:' + (i%2===0?'#fff':'#fafafa') + '; border-bottom:1px solid #f0f0f0;">'
+      + '<td style="padding:11px 8px;font-weight:500;text-align:left;vertical-align:top;">'
+      + '<div>' + item.name + '</div>' + descHtml
+      + '</td>'
+      + '<td style="padding:11px 8px;text-align:center;color:#888;vertical-align:top;">' + item.type + '</td>'
+      + '<td style="padding:11px 8px;text-align:right;color:#0FB8A0;font-weight:500;vertical-align:top;">' + Q(item.price) + '</td></tr>';
+  }
+  
+  var subtotalVal = q.subtotal !== undefined ? q.subtotal : q.total;
+  var discountVal = q.discountAmount !== undefined ? q.discountAmount : 0;
+  var applyIva = q.applyIva || false;
+  var ivaAmount = q.ivaAmount !== undefined ? q.ivaAmount : (applyIva ? ((subtotalVal - discountVal) * 0.12) : 0);
+  var baseTotal = Math.max(0, subtotalVal - discountVal);
+  
+  var calculationLines = '<table style="width:250px; margin-left:auto; border-collapse:collapse; border:none; border-top:2px solid #7C6FE0; margin-top:14px; margin-bottom:14px; font-size:13px; color:#555; line-height:1.6;">';
+  
+  if (discountVal > 0 || applyIva) {
+    calculationLines += '<tr>'
+      + '<td style="padding:4px 0;text-align:left;">Subtotal:</td>'
+      + '<td style="padding:4px 0;text-align:right;font-weight:500;color:#333;">' + Q(subtotalVal) + '</td>'
+      + '</tr>';
+  }
+  
+  if (discountVal > 0) {
+    var discTypeText = q.discountType === 'porcentaje' ? q.discountValue + '%' : 'Fijo';
+    calculationLines += '<tr style="color:#e24b4a;">'
+      + '<td style="padding:4px 0;text-align:left;">Descuento (' + discTypeText + '):</td>'
+      + '<td style="padding:4px 0;text-align:right;font-weight:500;">-' + Q(discountVal) + '</td>'
+      + '</tr>';
+  }
+  
+  if (applyIva) {
+    calculationLines += '<tr style="color:#888;">'
+      + '<td style="padding:4px 0;text-align:left;">Subtotal Neto:</td>'
+      + '<td style="padding:4px 0;text-align:right;font-weight:500;color:#333;">' + Q(baseTotal) + '</td>'
+      + '</tr>';
+      
+    calculationLines += '<tr style="color:#0FB8A0;">'
+      + '<td style="padding:4px 0;text-align:left;">IVA (12%):</td>'
+      + '<td style="padding:4px 0;text-align:right;font-weight:500;">+' + Q(ivaAmount) + '</td>'
+      + '</tr>';
+  }
+  
+  var totalLabel = applyIva ? 'Total con IVA:' : 'Total Neto:';
+  calculationLines += '<tr style="font-size:17px;font-weight:700;color:#7C6FE0;">'
+    + '<td style="padding:8px 0 4px 0;text-align:left;border-top:1px solid #f0f0f0;">' + totalLabel + '</td>'
+    + '<td style="padding:8px 0 4px 0;text-align:right;border-top:1px solid #f0f0f0;">' + Q(q.total) + '</td>'
+    + '</tr>';
+    
+  calculationLines += '</table>';
+
+  document.getElementById('pdf-body').innerHTML = '<div id="print-scale-root" style="width: 100%; display: flex; justify-content: center; overflow: hidden; box-sizing: border-box;">'
+    + '<div id="print-wrapper-outer" style="width: 100%; display: flex; justify-content: center; align-items: flex-start; overflow: hidden; box-sizing: border-box; transition: height 0.15s ease-out;">'
+    + '<div id="print-area" style="width:720px; min-width:720px; max-width:720px; box-sizing:border-box; background:#fff; text-align:left; box-shadow:0 8px 30px rgba(0,0,0,0.12); border-radius:12px; overflow:hidden; font-family:sans-serif; flex-shrink: 0; transform-origin: top center; transition: transform 0.15s ease-out;">'
+    + '<div style="background:#0F0F1E;color:#fff;padding:2.5rem 2rem;font-family:sans-serif;box-sizing:border-box;border-radius:12px 12px 0 0;">'
+    + '<table style="width:100%; border-collapse:collapse; border:none; border-bottom:1px solid rgba(255,255,255,0.15); padding-bottom:1.5rem; margin-bottom:1.5rem;">'
+    + '<tr>'
+    + '<td style="vertical-align:top; text-align:left; padding:0 0 1.5rem 0;">'
+    + '<table style="border-collapse:collapse; border:none; margin-bottom:10px;">'
+    + '<tr>'
+    + '<td style="vertical-align:middle; padding-right:10px; width:32px;">'
+    + '<svg width="32" height="32" viewBox="0 0 28 28" fill="none" style="display:block;"><circle cx="8" cy="14" r="5" fill="#7C6FE0"/><circle cx="20" cy="7" r="5" fill="#7C6FE0"/><circle cx="20" cy="21" r="5" fill="#0FB8A0"/></svg>'
+    + '</td>'
+    + '<td style="vertical-align:middle; text-align:left;">'
+    + '<span style="font-size:24px;font-weight:700;font-family:Georgia,serif;letter-spacing:1.5px;color:#fff;line-height:1;">INTEGLIS, S.A.</span>'
+    + '</td>'
+    + '</tr>'
+    + '</table>'
+    + '<div style="font-size:11px; color:rgba(255,255,255,0.7); line-height:1.5; margin-top:4px;">'
+    + '<div><strong>Dirección:</strong> Ciudad de Guatemala, Guatemala</div>'
+    + '<div style="margin-top:2px;"><strong>Teléfono:</strong> +502 4720 7501 &nbsp;|&nbsp; <strong>Web:</strong> integlis.com</div>'
+    + '<div style="margin-top:2px;"><strong>Correo:</strong> hola@integlis.com</div>'
+    + '</div>'
+    + '</td>'
+    + '<td style="vertical-align:top; text-align:right; padding:0 0 1.5rem 0; width:220px;">'
+    + '<div style="font-size:24px;font-weight:700;color:#7C6FE0;letter-spacing:1px;margin-bottom:4px;line-height:1;">COTIZACIÓN</div>'
+    + '<div style="font-size:15px;font-weight:600;color:rgba(255,255,255,0.85)">COT-' + String(q.number).padStart(3,'0') + '</div>'
+    + '</td>'
+    + '</tr>'
+    + '</table>'
+    + '<table style="width:100%; border-collapse:collapse; border:none; font-size:13px; line-height:1.4;">'
+    + '<tr>'
+    + '<td style="vertical-align:top; text-align:left; padding:0; width:50%;">'
+    + '<div style="font-size:10px;color:rgba(255,255,255,.45);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.5px">Preparado para</div>'
+    + '<div style="font-size:16px;font-weight:600;color:#fff;margin-bottom:2px">' + q.clientName + '</div>'
+    + '<div style="font-size:13px;color:rgba(255,255,255,.75);margin-bottom:2px;">' + q.clientCompany + '</div>'
+    + '<div style="font-size:12px;color:rgba(255,255,255,.6);margin-top:4px"><strong>NIT:</strong> ' + (q.clientNit || 'C/F') + '</div>'
+    + '</td>'
+    + '<td style="vertical-align:top; text-align:right; padding:0; width:50%;">'
+    + '<div style="font-size:10px;color:rgba(255,255,255,.45);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.5px">Vigencia y entrega</div>'
+    + '<div style="color:rgba(255,255,255,0.85);margin-bottom:3px;"><strong>Fecha de emisión:</strong> ' + dt(q.date) + '</div>'
+    + '<div style="color:rgba(255,255,255,0.85);' + (q.delivery || q.duration ? 'margin-bottom:3px;' : '') + '"><strong>Valido hasta:</strong> ' + dt(exp.toISOString().split('T')[0]) + '</div>'
+    + (q.delivery ? '<div style="color:rgba(255,255,255,0.85);margin-bottom:3px;"><strong>Plazo de entrega:</strong> ' + q.delivery + '</div>' : '')
+    + (q.duration ? '<div style="color:rgba(255,255,255,0.85)"><strong>Duración:</strong> ' + q.duration + '</div>' : '')
+    + '</td>'
+    + '</tr>'
+    + '</table>'
+    + '</div>'
+    + '<div style="border:1px solid #e0e0e0;border-top:none;padding:2rem;background:#fff">'
+    + '<table style="width:100%;border-collapse:collapse;font-size:13px;margin-bottom:1.5rem">'
+    + '<thead><tr style="border-bottom:2px solid #7C6FE0"><th style="text-align:left;padding:8px;font-size:11px;color:#999;font-weight:600;text-transform:uppercase">Servicio / Alcance Comercial</th>'
+    + '<th style="text-align:center;padding:8px;font-size:11px;color:#999;font-weight:600;text-transform:uppercase;width:120px">Modalidad</th>'
+    + '<th style="text-align:right;padding:8px;font-size:11px;color:#999;font-weight:600;text-transform:uppercase;width:120px">Precio</th></tr></thead>'
+    + '<tbody>' + rows + '</tbody></table>'
+    + calculationLines
+    + (q.delivery ? '<div style="margin-top:1.5rem;padding:12px 14px;background:#f7fafc;border-radius:8px;font-size:12px;color:#4a5568;border-left:3px solid #0FB8A0"><strong>Plazo de entrega:</strong><div style="margin-top:4px;">' + q.delivery + '</div></div>' : '')
+    + (q.duration ? '<div style="margin-top:1rem;padding:12px 14px;background:#f0faf6;border-radius:8px;font-size:12px;color:#1a5235;border-left:3px solid #10B981"><strong>Duración del servicio:</strong><div style="margin-top:4px;">' + q.duration + '</div></div>' : '')
+    + (q.notes ? '<div style="margin-top:1rem;padding:12px 14px;background:#f8f8fe;border-radius:8px;font-size:12px;color:#555;border-left:3px solid #7C6FE0"><strong>Condiciones y forma de pago:</strong><div style="white-space:pre-line;margin-top:4px;">' + q.notes + '</div></div>' : '')
+    + (q.terms ? '<div style="margin-top:1rem;padding:12px 14px;background:#fafafa;border-radius:8px;font-size:12px;color:#555;border-left:3px solid #a0aec0"><strong>Términos y condiciones del servicio:</strong><div style="white-space:pre-line;margin-top:4px;">' + q.terms + '</div></div>' : '')
+    + '<div style="margin-top:2.5rem;padding-top:1rem;border-top:1px solid #f0f0f0;font-size:11px;color:#aaa;text-align:center;line-height:1.6">'
+    + '<strong>INTEGLIS, S.A.</strong> · Tu partner para vender más, operar mejor y crecer con tecnología<br>integlis.com · hola@integlis.com · Ciudad de Guatemala, Guatemala</div></div></div></div></div>';
+  mOpen('m-pdf');
+  setTimeout(adjustPreviewScale, 50);
+  setTimeout(adjustPreviewScale, 200);
+}
+function printQuote() {
+  var html = document.getElementById('print-area').outerHTML;
+  var w = window.open('', '_blank');
+  if (!w) {
+    alert('El navegador bloqueó la ventana emergente. Por favor, haz clic en "Descargar PDF" para descargarlo directamente sin ventanas emergentes.');
+    return;
+  }
+  w.document.write('<!DOCTYPE html><html><head><meta charset="utf-8"><title>Cotización Integlis</title>'
+    + '<style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:sans-serif;background:#fff;padding:20px}</style>'
+    + '</head><body>' + html + '<scr' + 'ipt>window.onload=function(){window.print();window.close();}<\/scr' + 'ipt></body></html>');
+  w.document.close();
+}
+function downloadQuotePDF() {
+  var element = document.getElementById('print-area');
+  if (!element) {
+    alert('No se encontró el contenido de la cotización corporativa.');
+    return;
+  }
+  
+  var q = null;
+  if (currentPreviewQuoteId) {
+    for (var i = 0; i < db.quotes.length; i++) {
+      if (db.quotes[i].id === currentPreviewQuoteId) { q = db.quotes[i]; break; }
+    }
+  }
+  
+  var numStr = q ? String(q.number).padStart(3, '0') : '000';
+  var clientClean = q ? q.clientName.replace(/[^a-zA-Z0-9]/g, '_') : 'Cli';
+  var filename = 'Cotizacion_INTEGLIS_COT-' + numStr + '_' + clientClean + '.pdf';
+  
+  var btn = document.getElementById('btn-download-pdf');
+  var origText = btn ? btn.innerHTML : 'Descargar PDF';
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = 'Generando...';
+  }
+  
+  // Clone element to document.body with absolute positioning of high negative z-index
+  // to isolate from any container scrolling, transforms or flexboxes that cause html2canvas clipping,
+  // while keeping it at the flat document origin (0, 0) for perfect coordinate calculation.
+  var tempWrapper = document.createElement('div');
+  tempWrapper.style.position = 'absolute';
+  tempWrapper.style.top = '0';
+  tempWrapper.style.left = '0';
+  tempWrapper.style.width = '720px';
+  tempWrapper.style.minWidth = '720px';
+  tempWrapper.style.maxWidth = '720px';
+  tempWrapper.style.height = 'auto';
+  tempWrapper.style.zIndex = '-999999';
+  tempWrapper.style.pointerEvents = 'none';
+  tempWrapper.style.background = '#ffffff';
+  tempWrapper.style.overflow = 'visible';
+  tempWrapper.style.boxSizing = 'border-box';
+  tempWrapper.style.padding = '0';
+  tempWrapper.style.margin = '0';
+  
+  var clonedElement = element.cloneNode(true);
+  clonedElement.style.transform = 'none';
+  clonedElement.style.transformOrigin = 'initial';
+  clonedElement.style.transition = 'none';
+  clonedElement.style.boxShadow = 'none';
+  clonedElement.style.margin = '0';
+  clonedElement.style.borderRadius = '0';
+  clonedElement.style.width = '720px';
+  clonedElement.style.minWidth = '720px';
+  clonedElement.style.maxWidth = '720px';
+  clonedElement.style.boxSizing = 'border-box';
+  
+  tempWrapper.appendChild(clonedElement);
+  document.body.appendChild(tempWrapper);
+  
+  // Temporarily force body width to accommodate the print-area to prevent any html2canvas viewport clipping
+  var originalBodyWidth = document.body.style.width;
+  var originalBodyMinWidth = document.body.style.minWidth;
+  var originalBodyOverflow = document.body.style.overflow;
+  
+  document.body.style.width = '800px';
+  document.body.style.minWidth = '800px';
+  document.body.style.overflow = 'visible';
+  
+  var opt = {
+    margin: [10, 10, 10, 10],
+    filename: filename,
+    image: { type: 'jpeg', quality: 0.98 },
+    html2canvas: { 
+      scale: 2, 
+      useCORS: true,
+      letterRendering: true,
+      scrollX: 0,
+      scrollY: 0,
+      width: 720,
+      windowWidth: 720,
+      x: 0,
+      y: 0
+    },
+    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+  };
+  
+  // Use html2pdf on the isolated cloned element
+  html2pdf().from(clonedElement).set(opt).save().then(function() {
+    // Restore body styles
+    document.body.style.width = originalBodyWidth;
+    document.body.style.minWidth = originalBodyMinWidth;
+    document.body.style.overflow = originalBodyOverflow;
+    
+    if (tempWrapper.parentNode) {
+      tempWrapper.parentNode.removeChild(tempWrapper);
+    }
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = origText;
+    }
+  }).catch(function(err) {
+    // Restore body styles
+    document.body.style.width = originalBodyWidth;
+    document.body.style.minWidth = originalBodyMinWidth;
+    document.body.style.overflow = originalBodyOverflow;
+    
+    console.error('Error generating PDF download:', err);
+    if (tempWrapper.parentNode) {
+      tempWrapper.parentNode.removeChild(tempWrapper);
+    }
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = origText;
+    }
+    alert('No se pudo generar el archivo PDF automáticamente. Por favor, usa la opción "Imprimir por navegador".');
+  });
+}
+
+// FINANCE
+function setFinTab(tab) {
+  finTab = tab;
+  var tabs = document.querySelectorAll('.ft');
+  for (var i = 0; i < tabs.length; i++) tabs[i].classList.remove('active');
+  document.getElementById('ft-' + tab).classList.add('active');
+  renderFinance();
+}
+function renderFinance() {
+  var cf = document.getElementById('fin-client-filter');
+  var prev = cf.value;
+  cf.innerHTML = '<option value="">Todos los clientes</option>';
+  for (var i = 0; i < db.clients.length; i++) {
+    var opt = document.createElement('option');
+    opt.value = db.clients[i].id; opt.textContent = db.clients[i].name;
+    cf.appendChild(opt);
+  }
+  if (prev) cf.value = prev;
+
+  var q = (document.getElementById('fin-search').value || '').toLowerCase();
+  var clientF = cf.value;
+  var docs = db.docs.filter(function(d) {
+    var typeOk = finTab === 'all' || d.type === finTab;
+    var clientOk = !clientF || d.clientId === clientF;
+    var searchOk = !q || d.name.toLowerCase().indexOf(q) >= 0 || (d.notes||'').toLowerCase().indexOf(q) >= 0;
+    return typeOk && clientOk && searchOk;
+  });
+
+  var paid = 0, pend = 0, venc = 0;
+  for (var i = 0; i < db.docs.length; i++) {
+    var d = db.docs[i];
+    if (d.status === 'pagado') paid += Number(d.amount||0);
+    else if (d.status === 'pendiente') pend += Number(d.amount||0);
+    else if (d.status === 'vencido') venc += Number(d.amount||0);
+  }
+  var finM = [
+    {l:'Total documentos', v:db.docs.length, c:'var(--purple)'},
+    {l:'Pagado / Cobrado', v:Q(paid), c:'var(--teal)'},
+    {l:'Por cobrar', v:Q(pend), c:'var(--amber)'},
+    {l:'Vencido', v:Q(venc), c:'#e24b4a'}
+  ];
+  var mHtml = '';
+  for (var i = 0; i < finM.length; i++) {
+    mHtml += '<div class="mc"><div class="ml">' + finM[i].l + '</div><div class="mv" style="color:' + finM[i].c + ';font-size:20px">' + finM[i].v + '</div></div>';
+  }
+  document.getElementById('fin-metrics').innerHTML = mHtml;
+
+  var el = document.getElementById('fin-body');
+  if (!docs.length) { el.innerHTML = '<div class="empty">Sin documentos' + (finTab !== 'all' ? ' de este tipo' : '') + ' aún.</div>'; return; }
+  var reversed = docs.slice().reverse();
+  var html = '<div class="card" style="padding:0;overflow:hidden"><table class="tbl"><thead><tr><th>Documento</th><th>Tipo</th><th>Cliente</th><th>Fecha</th><th>Monto</th><th>Estado</th><th>Acciones</th></tr></thead><tbody>';
+  for (var i = 0; i < reversed.length; i++) {
+    var d = reversed[i];
+    var cl = null; for (var j = 0; j < db.clients.length; j++) { if (db.clients[j].id === d.clientId) { cl = db.clients[j]; break; } }
+    var sc = DOC_STATUS_COLOR[d.status] || '#888';
+    html += '<tr>'
+      + '<td><div style="font-weight:500">' + d.name + '</div>' + (d.notes ? '<div style="font-size:11px;color:var(--tx2)">' + d.notes.slice(0,40) + (d.notes.length>40?'...':'') + '</div>' : '') + '</td>'
+      + '<td><span class="type-chip tc-' + d.type + '">' + (DOC_TYPE_LABEL[d.type]||'Otro') + '</span></td>'
+      + '<td>' + (cl ? '<div style="font-size:13px;font-weight:500">' + cl.name + '</div><div style="font-size:11px;color:var(--tx2)">' + cl.company + '</div>' : '—') + '</td>'
+      + '<td>' + dt(d.date) + '</td>'
+      + '<td style="font-weight:500;color:var(--teal)">' + (d.amount ? Q(d.amount) : '—') + '</td>'
+      + '<td><span style="font-size:11px;padding:3px 8px;border-radius:12px;font-weight:500;background:' + sc + '20;color:' + sc + '">' + (d.status||'—') + '</span></td>'
+      + '<td style="white-space:nowrap;display:flex;gap:5px">'
+      + (d.fileData ? '<button class="bi btn-sm" onclick="viewDoc(\'' + d.id + '\')">Ver</button>' : '')
+      + '<button class="bi btn-sm" onclick="openDocModal(null,\'' + d.id + '\')">&#9998;</button>'
+      + '<button class="bi btn-sm" style="color:#e24b4a" onclick="deleteDoc(\'' + d.id + '\')">&#128465;</button>'
+      + '</td></tr>';
+  }
+  html += '</tbody></table></div>';
+  el.innerHTML = html;
+}
+function openDocModal(clientId, docId) {
+  var d = null;
+  if (docId) { for (var i = 0; i < db.docs.length; i++) { if (db.docs[i].id === docId) { d = db.docs[i]; break; } } }
+  document.getElementById('m-doc-title').textContent = d ? 'Editar documento' : 'Subir documento';
+  document.getElementById('doc-name').value = d ? d.name : '';
+  document.getElementById('doc-type').value = d ? (d.type||'factura') : 'factura';
+  document.getElementById('doc-amount').value = d ? (d.amount||'') : '';
+  document.getElementById('doc-date').value = d ? (d.date||todayStr()) : todayStr();
+  document.getElementById('doc-status').value = d ? (d.status||'pendiente') : 'pendiente';
+  document.getElementById('doc-notes').value = d ? (d.notes||'') : '';
+  document.getElementById('doc-id').value = d ? d.id : '';
+  document.getElementById('doc-file').value = '';
+  var sel = document.getElementById('doc-client');
+  sel.innerHTML = '<option value="">— Sin cliente —</option>';
+  for (var i = 0; i < db.clients.length; i++) {
+    var c = db.clients[i];
+    var opt = document.createElement('option');
+    opt.value = c.id; opt.textContent = c.name + ' — ' + c.company;
+    sel.appendChild(opt);
+  }
+  sel.value = d ? (d.clientId||'') : (clientId||'');
+  mOpen('m-doc');
+}
+function saveDoc() {
+  var name = document.getElementById('doc-name').value.trim();
+  if (!name) { alert('El nombre es obligatorio'); return; }
+  var id = document.getElementById('doc-id').value;
+  var file = document.getElementById('doc-file').files[0];
+  var data = {name:name,
+    type:document.getElementById('doc-type').value,
+    clientId:document.getElementById('doc-client').value,
+    amount:document.getElementById('doc-amount').value,
+    date:document.getElementById('doc-date').value,
+    status:document.getElementById('doc-status').value,
+    notes:document.getElementById('doc-notes').value.trim(),
+    createdAt:new Date().toISOString()};
+  if (file) {
+    var reader = new FileReader();
+    reader.onload = function(e) {
+      data.fileName = file.name; data.fileType = file.type; data.fileData = e.target.result;
+      if (id) { for (var i = 0; i < db.docs.length; i++) { if (db.docs[i].id === id) { Object.assign(db.docs[i], data); break; } } }
+      else { data.id = uid(); db.docs.push(data); }
+      saveDB(); mClose('m-doc'); renderFinance(); renderDash();
+      if (currentClient) openDetail(currentClient);
+    };
+    reader.readAsDataURL(file);
+  } else {
+    if (id) { for (var i = 0; i < db.docs.length; i++) { if (db.docs[i].id === id) { Object.assign(db.docs[i], data); break; } } }
+    else { data.id = uid(); db.docs.push(data); }
+    saveDB(); mClose('m-doc'); renderFinance(); renderDash();
+    if (currentClient) openDetail(currentClient);
+  }
+}
+function viewDoc(id) {
+  var d = null;
+  for (var i = 0; i < db.docs.length; i++) { if (db.docs[i].id === id) { d = db.docs[i]; break; } }
+  if (!d || !d.fileData) return;
+  var w = window.open('', '_blank');
+  if (d.fileType && d.fileType.indexOf('pdf') >= 0) {
+    w.document.write('<iframe src="' + d.fileData + '" style="width:100vw;height:100vh;border:none"></iframe>');
+  } else {
+    w.document.write('<img src="' + d.fileData + '" style="max-width:100%;height:auto">');
+  }
+  w.document.close();
+}
+function deleteDoc(id) {
+  customConfirm('¿Mover este documento a la papelera?', function() {
+    if (!db.trash) db.trash = [];
+    var docObj = null;
+    var docIdx = -1;
+    for (var i = 0; i < db.docs.length; i++) {
+      if (db.docs[i].id === id) { docObj = db.docs[i]; docIdx = i; break; }
+    }
+    if (docObj) {
+      db.docs.splice(docIdx, 1);
+      db.trash.push({ id: id, type: 'doc', data: docObj, deletedAt: Date.now() });
+    }
+    saveDB(); renderFinance(); renderDash();
+    var isDetailOpen = document.getElementById('clientDetail') && document.getElementById('clientDetail').classList.contains('open');
+    if (isDetailOpen && currentClient) openDetail(currentClient);
+  });
+}
+
+// TASKS
+function taskRow(t, compact) {
+  var cl = null;
+  for (var i = 0; i < db.clients.length; i++) { if (db.clients[i].id === t.clientId) { cl = db.clients[i]; break; } }
+  var od = isOverdue(t.due) && !t.done;
+  var tod = isToday(t.due) && !t.done;
+  var dueClass = od ? 'overdue' : tod ? 'today' : '';
+  var dueColor = od ? '#e24b4a' : tod ? 'var(--amber)' : 'var(--tx2)';
+  return '<div class="task-item">'
+    + '<div class="prio-dot" style="background:' + (PRIO_COLOR[t.priority]||'#888') + '"></div>'
+    + '<div class="task-cb ' + (t.done?'done':'') + '" onclick="toggleTask(\'' + t.id + '\')">' + (t.done?'&#10003;':'') + '</div>'
+    + '<div class="task-body">'
+    + '<div class="task-title ' + (t.done?'done':'') + '">' + t.title + '</div>'
+    + '<div class="task-meta">'
+    + (t.due ? '<span class="task-due" style="color:' + dueColor + '">' + (od?'Vencida · ':tod?'Hoy · ':'') + dt(t.due) + '</span>' : '')
+    + (cl ? '<span>' + cl.name + '</span>' : '')
+    + (t.category ? '<span style="background:var(--sur2);padding:1px 6px;border-radius:8px;font-size:11px">' + t.category + '</span>' : '')
+    + '</div></div>'
+    + '<div style="display:flex; gap:6px; align-items:center;">'
+    + '<button type="button" class="bi btn-sm" onclick="event.stopPropagation(); openTaskModal(null,\'' + t.id + '\')" title="Editar tarea">&#9998;</button>'
+    + '<button type="button" class="bi btn-sm" style="color:#e24b4a; border-color:rgba(226,75,74,0.15); background:rgba(226,75,74,0.05);" onclick="event.stopPropagation(); deleteTaskDirect(\'' + t.id + '\')" title="Eliminar tarea">&#128465;</button>'
+    + '</div>'
+    + '</div>';
+}
+function renderTasks() {
+  updatePendingBadge();
+  var filter = document.getElementById('task-filter').value;
+  var all;
+  if (filter === 'all') all = db.tasks;
+  else if (filter === 'done') all = db.tasks.filter(function(t){ return t.done; });
+  else all = db.tasks.filter(function(t){ return !t.done; });
+
+  var done = db.tasks.filter(function(t){ return t.done; }).length;
+  var total = db.tasks.length;
+  var pct = total ? Math.round(done/total*100) : 0;
+  document.getElementById('task-progress-label').textContent = done + '/' + total + ' completadas (' + pct + '%)';
+  document.getElementById('task-progress-bar').style.width = pct + '%';
+
+  var tod = todayStr();
+  var overdue = all.filter(function(t){ return !t.done && t.due && t.due < tod; });
+  var todayT = all.filter(function(t){ return !t.done && t.due === tod; });
+  var upcoming = all.filter(function(t){ return !t.done && t.due && t.due > tod; });
+  var noDate = all.filter(function(t){ return !t.done && !t.due; });
+  var doneT = all.filter(function(t){ return t.done; });
+
+  function section(elId, title, tasks, color) {
+    var el = document.getElementById(elId);
+    if (!tasks.length) { el.innerHTML = ''; return; }
+    el.innerHTML = '<div class="card"><div class="ct" style="color:' + (color||'var(--tx)') + '">' + title
+      + ' <span style="font-size:12px;color:var(--tx2);font-weight:400">(' + tasks.length + ')</span></div>'
+      + tasks.map(function(t){ return taskRow(t, false); }).join('') + '</div>';
+  }
+  section('tasks-overdue', 'Vencidas', overdue, '#e24b4a');
+  section('tasks-today', 'Para hoy', todayT, 'var(--amber)');
+  section('tasks-upcoming', 'Próximas', upcoming, 'var(--purple)');
+  section('tasks-no-date', 'Sin fecha', noDate, 'var(--tx2)');
+  section('tasks-done-section', 'Completadas', doneT, 'var(--tx2)');
+
+  if (!all.length) {
+    document.getElementById('tasks-no-date').innerHTML = '<div class="empty">' + (filter==='done'?'Sin tareas completadas.':'¡Sin tareas pendientes!') + '</div>';
+  }
+}
+function openTaskModal(clientId, taskId) {
+  var t = null;
+  if (taskId) { for (var i = 0; i < db.tasks.length; i++) { if (db.tasks[i].id === taskId) { t = db.tasks[i]; break; } } }
+  currentTaskId = taskId || null;
+  document.getElementById('m-task-title').textContent = t ? 'Editar tarea' : 'Nueva tarea';
+  document.getElementById('t-title').value = t ? t.title : '';
+  document.getElementById('t-due').value = t ? (t.due||'') : '';
+  document.getElementById('t-priority').value = t ? (t.priority||'media') : 'media';
+  document.getElementById('t-cat').value = t ? (t.category||'seguimiento') : 'seguimiento';
+  document.getElementById('t-notes').value = t ? (t.notes||'') : '';
+  document.getElementById('t-id').value = t ? t.id : '';
+  document.getElementById('t-del-btn').style.display = t ? 'inline-flex' : 'none';
+  var sel = document.getElementById('t-client');
+  sel.innerHTML = '<option value="">— Sin cliente —</option>';
+  for (var i = 0; i < db.clients.length; i++) {
+    var c = db.clients[i];
+    var opt = document.createElement('option');
+    opt.value = c.id; opt.textContent = c.name + ' — ' + c.company;
+    sel.appendChild(opt);
+  }
+  sel.value = t ? (t.clientId||'') : (clientId||'');
+  mOpen('m-task');
+}
+function saveTask() {
+  var title = document.getElementById('t-title').value.trim();
+  if (!title) { alert('El título es obligatorio'); return; }
+  var id = document.getElementById('t-id').value;
+  var existingDone = false;
+  if (id) { for (var i = 0; i < db.tasks.length; i++) { if (db.tasks[i].id === id) { existingDone = db.tasks[i].done||false; break; } } }
+  var data = {title:title,
+    due:document.getElementById('t-due').value,
+    priority:document.getElementById('t-priority').value,
+    category:document.getElementById('t-cat').value,
+    clientId:document.getElementById('t-client').value,
+    notes:document.getElementById('t-notes').value.trim(),
+    done:existingDone, createdAt:new Date().toISOString()};
+  if (id) { for (var i = 0; i < db.tasks.length; i++) { if (db.tasks[i].id === id) { Object.assign(db.tasks[i], data); break; } } }
+  else { data.id = uid(); db.tasks.push(data); }
+  saveDB(); mClose('m-task'); renderTasks(); renderDash();
+  updatePendingBadge();
+  var isDetailOpen = document.getElementById('clientDetail') && document.getElementById('clientDetail').classList.contains('open');
+  if (isDetailOpen && currentClient) openDetail(currentClient);
+}
+function toggleTask(id) {
+  for (var i = 0; i < db.tasks.length; i++) {
+    if (db.tasks[i].id === id) { db.tasks[i].done = !db.tasks[i].done; break; }
+  }
+  saveDB(); renderTasks(); renderDash(); updatePendingBadge();
+  var isDetailOpen = document.getElementById('clientDetail') && document.getElementById('clientDetail').classList.contains('open');
+  if (isDetailOpen && currentClient) openDetail(currentClient);
+}
+function delTask() {
+  if (!currentTaskId) return;
+  customConfirm('¿Mover esta tarea a la papelera?', function() {
+    if (!db.trash) db.trash = [];
+    var tObj = null;
+    var tIdx = -1;
+    for (var i = 0; i < db.tasks.length; i++) {
+      if (db.tasks[i].id === currentTaskId) { tObj = db.tasks[i]; tIdx = i; break; }
+    }
+    if (tObj) {
+      db.tasks.splice(tIdx, 1);
+      db.trash.push({ id: currentTaskId, type: 'task', data: tObj, deletedAt: Date.now() });
+    }
+    saveDB(); mClose('m-task'); renderTasks(); renderDash(); updatePendingBadge();
+    var isDetailOpen = document.getElementById('clientDetail') && document.getElementById('clientDetail').classList.contains('open');
+    if (isDetailOpen && currentClient) openDetail(currentClient);
+  });
+}
+function deleteTaskDirect(id) {
+  customConfirm('¿Mover esta tarea a la papelera?', function() {
+    if (!db.trash) db.trash = [];
+    var tObj = null;
+    var tIdx = -1;
+    for (var i = 0; i < db.tasks.length; i++) {
+      if (db.tasks[i].id === id) { tObj = db.tasks[i]; tIdx = i; break; }
+    }
+    if (tObj) {
+      db.tasks.splice(tIdx, 1);
+      db.trash.push({ id: id, type: 'task', data: tObj, deletedAt: Date.now() });
+    }
+    saveDB(); renderTasks(); renderDash(); updatePendingBadge();
+    var isDetailOpen = document.getElementById('clientDetail') && document.getElementById('clientDetail').classList.contains('open');
+    if (isDetailOpen && currentClient) openDetail(currentClient);
+  });
+}
+
+// ANALYTICS
+function renderAnalytics() {
+  var period = parseInt(document.getElementById('an-period').value) || 0;
+  var cutoff = period ? new Date(Date.now() - period*86400000).toISOString() : null;
+  var deals = cutoff ? db.deals.filter(function(d){ return d.createdAt >= cutoff; }) : db.deals;
+  var quotes = cutoff ? db.quotes.filter(function(q){ return q.date >= cutoff.split('T')[0]; }) : db.quotes;
+  var docs = cutoff ? db.docs.filter(function(d){ return d.createdAt >= cutoff; }) : db.docs;
+
+  var won = deals.filter(function(d){ return d.stage === 'ganado'; });
+  var lost = deals.filter(function(d){ return d.stage === 'perdido'; });
+  var open = deals.filter(function(d){ return d.stage !== 'ganado' && d.stage !== 'perdido'; });
+  var openVal = 0; for (var i = 0; i < open.length; i++) openVal += Number(open[i].value||0);
+  var wonVal = 0; for (var i = 0; i < won.length; i++) wonVal += Number(won[i].value||0);
+  var winRate = (won.length + lost.length) > 0 ? Math.round(won.length / (won.length + lost.length) * 100) : 0;
+  var avgDeal = won.length ? Math.round(wonVal / won.length) : 0;
+
+  var kpis = [
+    {l:'Total deals', v:deals.length, c:'var(--purple)'},
+    {l:'Deals ganados', v:won.length, c:'#639922'},
+    {l:'Win rate', v:winRate+'%', c:winRate>=50?'#639922':'#e24b4a'},
+    {l:'Pipeline abierto', v:Q(openVal), c:'var(--amber)'},
+    {l:'Ingresos cerrados', v:Q(wonVal), c:'var(--teal)'},
+    {l:'Ticket promedio', v:Q(avgDeal), c:'var(--purple)'},
+    {l:'Cotizaciones', v:quotes.length, c:'var(--tx)'},
+    {l:'Docs registrados', v:docs.length, c:'var(--tx)'}
+  ];
+  var kHtml = '';
+  for (var i = 0; i < kpis.length; i++) {
+    kHtml += '<div class="mc"><div class="ml">' + kpis[i].l + '</div><div class="mv" style="color:' + kpis[i].c + ';font-size:20px">' + kpis[i].v + '</div></div>';
+  }
+  document.getElementById('an-kpis').innerHTML = kHtml;
+
+  // Funnel
+  var fStages = STAGES.filter(function(s){ return s.id !== 'ganado' && s.id !== 'perdido'; });
+  var maxC = 1;
+  for (var i = 0; i < fStages.length; i++) {
+    var cnt = deals.filter(function(d){ return d.stage === fStages[i].id; }).length;
+    if (cnt > maxC) maxC = cnt;
+  }
+  var fHtml = '';
+  for (var i = 0; i < fStages.length; i++) {
+    var s = fStages[i];
+    var cnt = deals.filter(function(d){ return d.stage === s.id; }).length;
+    var val = 0; deals.filter(function(d){ return d.stage === s.id; }).forEach(function(d){ val += Number(d.value||0); });
+    var pct = Math.max(Math.round(cnt/maxC*100), 4);
+    var prev = i > 0 ? deals.filter(function(d){ return d.stage === fStages[i-1].id; }).length : null;
+    var conv = (prev !== null && prev > 0) ? Math.round(cnt/prev*100) : null;
+    fHtml += '<div style="margin-bottom:10px">'
+      + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">'
+      + '<div style="display:flex;align-items:center;gap:6px"><span class="dot" style="background:' + s.color + '"></span>'
+      + '<span style="font-size:13px;font-weight:500">' + s.label + '</span>'
+      + (conv !== null ? '<span style="font-size:11px;color:var(--tx2);background:var(--sur2);padding:1px 6px;border-radius:8px">↓ ' + conv + '%</span>' : '')
+      + '</div><div style="display:flex;gap:12px;align-items:center">'
+      + (val ? '<span style="font-size:12px;color:var(--tx2)">' + Q(val) + '</span>' : '')
+      + '<span style="font-size:13px;font-weight:500;min-width:20px;text-align:right">' + cnt + '</span></div></div>'
+      + '<div style="height:10px;background:var(--sur2);border-radius:5px;overflow:hidden">'
+      + '<div style="width:' + pct + '%;height:100%;background:' + s.color + ';border-radius:5px"></div></div></div>';
+  }
+  document.getElementById('an-funnel').innerHTML = fHtml;
+
+  // Win/Loss
+  var total = won.length + lost.length;
+  var wPct = total ? Math.round(won.length/total*100) : 0;
+  var lPct = total ? (100-wPct) : 0;
+  document.getElementById('an-winloss').innerHTML = total
+    ? '<div style="position:relative;width:120px;height:120px;margin-bottom:1rem">'
+      + '<svg viewBox="0 0 36 36" style="width:120px;height:120px;transform:rotate(-90deg)">'
+      + '<circle cx="18" cy="18" r="15.9" fill="none" stroke="var(--sur2)" stroke-width="4"/>'
+      + '<circle cx="18" cy="18" r="15.9" fill="none" stroke="#639922" stroke-width="4" stroke-dasharray="' + wPct + ' ' + (100-wPct) + '" stroke-dashoffset="0" stroke-linecap="round"/>'
+      + '<circle cx="18" cy="18" r="15.9" fill="none" stroke="#e24b4a" stroke-width="4" stroke-dasharray="' + lPct + ' ' + (100-lPct) + '" stroke-dashoffset="-' + wPct + '" stroke-linecap="round"/>'
+      + '</svg><div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column">'
+      + '<div style="font-size:22px;font-weight:500">' + wPct + '%</div>'
+      + '<div style="font-size:10px;color:var(--tx2)">win rate</div></div></div>'
+      + '<div style="display:flex;gap:1.5rem">'
+      + '<div style="text-align:center"><div style="font-size:20px;font-weight:500;color:#639922">' + won.length + '</div><div style="font-size:11px;color:var(--tx2)">Won</div></div>'
+      + '<div style="text-align:center"><div style="font-size:20px;font-weight:500;color:#e24b4a">' + lost.length + '</div><div style="font-size:11px;color:var(--tx2)">Lost</div></div>'
+      + '<div style="text-align:center"><div style="font-size:20px;font-weight:500;color:var(--amber)">' + open.length + '</div><div style="font-size:11px;color:var(--tx2)">La fecha</div></div></div>'
+    : '<div style="color:var(--tx2);font-size:13px">Sin datos aún</div>';
+
+  // Value by stage
+  var stageVals = [];
+  for (var i = 0; i < STAGES.length; i++) {
+    var s = STAGES[i];
+    var stDeals = deals.filter(function(d){ return d.stage === s.id; });
+    var val = 0; for (var j = 0; j < stDeals.length; j++) val += Number(stDeals[j].value||0);
+    if (stDeals.length) stageVals.push({s:s, val:val});
+  }
+  var maxVal = 1; for (var i = 0; i < stageVals.length; i++) { if (stageVals[i].val > maxVal) maxVal = stageVals[i].val; }
+  var svHtml = '';
+  if (stageVals.length) {
+    for (var i = 0; i < stageVals.length; i++) {
+      var x = stageVals[i];
+      svHtml += '<div style="margin-bottom:10px">'
+        + '<div style="display:flex;justify-content:space-between;margin-bottom:4px;font-size:13px">'
+        + '<span style="display:flex;align-items:center;gap:5px"><span class="dot" style="background:' + x.s.color + '"></span>' + x.s.label + '</span>'
+        + '<span style="font-weight:500;color:var(--teal)">' + Q(x.val) + '</span></div>'
+        + '<div style="height:8px;background:var(--sur2);border-radius:4px;overflow:hidden">'
+        + '<div style="width:' + Math.round(x.val/maxVal*100) + '%;height:100%;background:' + x.s.color + ';border-radius:4px"></div></div></div>';
+    }
+  } else { svHtml = '<div style="color:var(--tx2);font-size:13px;text-align:center;padding:1rem">Sin datos</div>'; }
+  document.getElementById('an-stage-value').innerHTML = svHtml;
+
+  // Services
+  var svcCount = {}; var svcVal = {};
+  for (var i = 0; i < quotes.length; i++) {
+    for (var j = 0; j < quotes[i].items.length; j++) {
+      var item = quotes[i].items[j];
+      svcCount[item.name] = (svcCount[item.name]||0) + 1;
+      svcVal[item.name] = (svcVal[item.name]||0) + Number(item.price||0);
+    }
+  }
+  var svcList = [];
+  for (var k in svcCount) svcList.push([k, svcCount[k]]);
+  svcList.sort(function(a,b){ return b[1]-a[1]; });
+  svcList = svcList.slice(0,8);
+  var maxSvc = svcList.length ? svcList[0][1] : 1;
+  var sHtml = '';
+  if (svcList.length) {
+    for (var i = 0; i < svcList.length; i++) {
+      var name = svcList[i][0]; var cnt = svcList[i][1];
+      sHtml += '<div style="margin-bottom:9px">'
+        + '<div style="display:flex;justify-content:space-between;margin-bottom:3px;font-size:12px">'
+        + '<span>' + name + '</span><span style="color:var(--tx2)">' + cnt + ' vez' + (cnt>1?'es':'') + ' · <span style="color:var(--teal);font-weight:500">' + Q(svcVal[name]) + '</span></span></div>'
+        + '<div style="height:7px;background:var(--sur2);border-radius:4px;overflow:hidden">'
+        + '<div style="width:' + Math.round(cnt/maxSvc*100) + '%;height:100%;background:var(--purple);border-radius:4px;opacity:' + (1-i*0.1) + '"></div></div></div>';
+    }
+  } else { sHtml = '<div style="color:var(--tx2);font-size:13px;text-align:center;padding:1rem">Sin cotizaciones</div>'; }
+  document.getElementById('an-services').innerHTML = sHtml;
+
+  // Finance summary
+  var paid2 = 0, pend2 = 0, venc2 = 0;
+  for (var i = 0; i < docs.length; i++) {
+    var d = docs[i];
+    if (d.status === 'pagado') paid2 += Number(d.amount||0);
+    else if (d.status === 'pendiente') pend2 += Number(d.amount||0);
+    else if (d.status === 'vencido') venc2 += Number(d.amount||0);
+  }
+  var totalFin = paid2 + pend2 + venc2 || 1;
+  var finItems = [{l:'Pagado / cobrado', v:paid2, c:'var(--teal)'},{l:'Por cobrar', v:pend2, c:'var(--amber)'},{l:'Vencido', v:venc2, c:'#e24b4a'}];
+  var afHtml = '';
+  for (var i = 0; i < finItems.length; i++) {
+    var fi = finItems[i];
+    afHtml += '<div style="margin-bottom:12px">'
+      + '<div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px">'
+      + '<span style="color:var(--tx2)">' + fi.l + '</span><span style="font-weight:500;color:' + fi.c + '">' + Q(fi.v) + '</span></div>'
+      + '<div style="height:8px;background:var(--sur2);border-radius:4px;overflow:hidden">'
+      + '<div style="width:' + Math.round(fi.v/totalFin*100) + '%;height:100%;background:' + fi.c + ';border-radius:4px"></div></div></div>';
+  }
+  afHtml += '<div style="border-top:1px solid var(--br);padding-top:10px;display:flex;justify-content:space-between;font-size:13px"><span style="color:var(--tx2)">Total documentado</span><span style="font-weight:500">' + Q(paid2+pend2+venc2) + '</span></div>';
+  document.getElementById('an-finance').innerHTML = afHtml;
+
+  // Tasks summary
+  var tdone = db.tasks.filter(function(t){ return t.done; }).length;
+  var tpend = db.tasks.filter(function(t){ return !t.done && !(t.due && t.due < todayStr()); }).length;
+  var toverd = db.tasks.filter(function(t){ return !t.done && t.due && t.due < todayStr(); }).length;
+  var tTotal = db.tasks.length || 1;
+  var taskItems = [{l:'Completadas',v:tdone,c:'var(--teal)'},{l:'Pendientes',v:tpend,c:'var(--amber)'},{l:'Vencidas',v:toverd,c:'#e24b4a'}];
+  var atHtml = '';
+  for (var i = 0; i < taskItems.length; i++) {
+    var ti = taskItems[i];
+    atHtml += '<div style="margin-bottom:12px">'
+      + '<div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px">'
+      + '<span style="color:var(--tx2)">' + ti.l + '</span><span style="font-weight:500;color:' + ti.c + '">' + ti.v + '</span></div>'
+      + '<div style="height:8px;background:var(--sur2);border-radius:4px;overflow:hidden">'
+      + '<div style="width:' + Math.round(ti.v/tTotal*100) + '%;height:100%;background:' + ti.c + ';border-radius:4px"></div></div></div>';
+  }
+  document.getElementById('an-tasks').innerHTML = atHtml;
+
+  // Top clients
+  var clientVal = {};
+  for (var i = 0; i < deals.length; i++) {
+    var d = deals[i];
+    if (d.clientId) clientVal[d.clientId] = (clientVal[d.clientId]||0) + Number(d.value||0);
+  }
+  var topList = [];
+  for (var k in clientVal) topList.push([k, clientVal[k]]);
+  topList.sort(function(a,b){ return b[1]-a[1]; });
+  topList = topList.slice(0,8);
+  var maxCV = topList.length ? topList[0][1] : 1;
+  var tcHtml = '';
+  if (topList.length) {
+    tcHtml = '<div class="grid-2col" style="gap:12px">';
+    for (var i = 0; i < topList.length; i++) {
+      var cid = topList[i][0]; var val = topList[i][1];
+      var c = null; for (var j = 0; j < db.clients.length; j++) { if (db.clients[j].id === cid) { c = db.clients[j]; break; } }
+      if (!c) continue;
+      var cDeals = deals.filter(function(d){ return d.clientId === cid; });
+      var cWon = cDeals.filter(function(d){ return d.stage === 'ganado'; }).length;
+      tcHtml += '<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--br)">'
+        + '<div class="av" style="background:' + ac(c.name) + '20;color:' + ac(c.name) + '">' + ini(c.name) + '</div>'
+        + '<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + c.name + '</div>'
+        + '<div style="height:5px;background:var(--sur2);border-radius:3px;margin-top:4px;overflow:hidden">'
+        + '<div style="width:' + Math.round(val/maxCV*100) + '%;height:100%;background:var(--purple);border-radius:3px"></div></div></div>'
+        + '<div style="text-align:right;flex-shrink:0"><div style="font-size:12px;font-weight:500;color:var(--teal)">' + Q(val) + '</div>'
+        + '<div style="font-size:11px;color:var(--tx2)">' + cDeals.length + ' deal' + (cDeals.length>1?'s':'') + ' · ' + cWon + ' won</div></div></div>';
+    }
+    tcHtml += '</div>';
+  } else { tcHtml = '<div style="color:var(--tx2);font-size:13px;text-align:center;padding:1rem">Sin datos de clientes</div>'; }
+  document.getElementById('an-clients').innerHTML = tcHtml;
+}
+
+// MODAL HELPERS
+function mOpen(id) { document.getElementById(id).classList.add('open'); }
+function mClose(id) { document.getElementById(id).classList.remove('open'); }
+function bgClose(e, id) { if (e.target === document.getElementById(id)) mClose(id); }
+
+// AUTH FUNCTIONS
+function checkAuth() {
+  var isAuth = sessionStorage.getItem('integlis_crm_auth') === 'true';
+  var loginEl = document.getElementById('login-container');
+  var appEl = document.getElementById('crm-app');
+  if (isAuth) {
+    if (loginEl) loginEl.style.display = 'none';
+    if (appEl) appEl.style.display = 'block';
+    
+    // Initialize CRM only once authorized
+    loadDB();
+    renderDash();
+    updatePendingBadge();
+  } else {
+    if (loginEl) loginEl.style.display = 'flex';
+    if (appEl) appEl.style.display = 'none';
+  }
+}
+
+function handleLogin(e) {
+  if (e) e.preventDefault();
+  var email = document.getElementById('login-email').value.trim();
+  var pass = document.getElementById('login-password').value;
+  var errEl = document.getElementById('login-error');
+  
+  if (email === 'hugo@integlis.com' && pass === 'Tikisate2310@') {
+    if (errEl) errEl.style.display = 'none';
+    sessionStorage.setItem('integlis_crm_auth', 'true');
+    checkAuth();
+  } else {
+    if (errEl) errEl.style.display = 'block';
+  }
+}
+
+function logout() {
+  sessionStorage.removeItem('integlis_crm_auth');
+  checkAuth();
+}
+
+// DRAG AND DROP FUNCTIONS FOR PIPELINE
+var activeDraggedDealId = null;
+
+function dragDeal(e, id) {
+  activeDraggedDealId = id;
+  e.dataTransfer.setData('text/plain', id);
+  e.dataTransfer.effectAllowed = 'move';
+  setTimeout(function() {
+    var cards = document.querySelectorAll('.dc');
+    for (var i = 0; i < cards.length; i++) {
+      if (cards[i].getAttribute('onclick') && cards[i].getAttribute('onclick').indexOf("'" + id + "'") >= 0) {
+        cards[i].classList.add('dragging');
+      }
+    }
+  }, 0);
+}
+
+function dragEndDeal(e) {
+  activeDraggedDealId = null;
+  var cards = document.querySelectorAll('.dc');
+  for (var i = 0; i < cards.length; i++) {
+    cards[i].classList.remove('dragging');
+  }
+}
+
+function allowDropDeal(e) {
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+}
+
+function dragEnterColumn(e, stageId) {
+  e.preventDefault();
+  var cols = document.querySelectorAll('.kc');
+  for (var i = 0; i < STAGES.length; i++) {
+    if (STAGES[i].id === stageId && cols[i]) {
+      cols[i].classList.add('drag-over');
+      break;
+    }
+  }
+}
+
+function dragLeaveColumn(e, stageId) {
+  var cols = document.querySelectorAll('.kc');
+  for (var i = 0; i < STAGES.length; i++) {
+    if (STAGES[i].id === stageId && cols[i]) {
+      cols[i].classList.remove('drag-over');
+      break;
+    }
+  }
+}
+
+function dropDeal(e, stageId) {
+  e.preventDefault();
+  var cols = document.querySelectorAll('.kc');
+  for (var i = 0; i < cols.length; i++) {
+    cols[i].classList.remove('drag-over');
+  }
+  
+  var id = e.dataTransfer.getData('text/plain') || activeDraggedDealId;
+  if (!id) return;
+  
+  var deal = null;
+  for (var i = 0; i < db.deals.length; i++) {
+    if (db.deals[i].id === id) {
+      deal = db.deals[i];
+      break;
+    }
+  }
+  
+  if (deal && deal.stage !== stageId) {
+    deal.stage = stageId;
+    saveDB();
+    renderPipeline();
+    renderDash();
+  }
+}
+
+// DEAL FOLLOWUP TASK HELPERS
+function toggleDealTaskSection() {
+  var isChecked = document.getElementById('d-task-enable').checked;
+  document.getElementById('d-task-section').style.display = isChecked ? 'block' : 'none';
+  if (isChecked) {
+    updateDefaultDealTaskTitle();
+  }
+}
+
+function calcDealTaskDate() {
+  var whenVal = document.getElementById('d-task-when').value;
+  var customContainer = document.getElementById('d-task-custom-date-container');
+  var targetStr = '';
+  if (whenVal === 'custom') {
+    customContainer.style.display = 'block';
+    // set to today's date initially if blank
+    var existingDate = document.getElementById('d-task-custom-date').value;
+    if (!existingDate) {
+      document.getElementById('d-task-custom-date').value = todayStr();
+    }
+  } else {
+    customContainer.style.display = 'none';
+    var days = parseInt(whenVal, 10);
+    var d = new Date();
+    d.setDate(d.getDate() + days);
+    targetStr = d.toISOString().split('T')[0];
+    document.getElementById('d-task-custom-date').value = targetStr;
+  }
+}
+
+function updateDefaultDealTaskTitle() {
+  var titleInput = document.getElementById('d-task-title');
+  if (titleInput.getAttribute('data-manual') === 'true' && titleInput.value.trim() !== '') {
+    return; // Don't overwrite hands-on edit
+  }
+  var typeVal = document.getElementById('d-task-type').value;
+  var dealTitle = document.getElementById('d-title').value.trim() || 'Oportunidad';
+  
+  var cleanType = TASK_TYPE_LABELS[typeVal] || 'Seguimiento';
+  
+  titleInput.value = cleanType + ': ' + dealTitle;
+}
+
+function renderDealTasks(dealId) {
+  var container = document.getElementById('d-existing-tasks-container');
+  var list = document.getElementById('d-existing-tasks-list');
+  if (!dealId) {
+    container.style.display = 'none';
+    return;
+  }
+  
+  var tasks = db.tasks.filter(function(t) { return t.dealId === dealId && !t.done; });
+  if (tasks.length === 0) {
+    container.style.display = 'none';
+    return;
+  }
+  
+  container.style.display = 'block';
+  var html = '';
+  var tod = todayStr();
+  for (var i = 0; i < tasks.length; i++) {
+    var t = tasks[i];
+    var over = t.due && t.due < tod;
+    var isTodayT = t.due === tod;
+    var dueLabel = t.due ? dt(t.due) : 'Sin fecha';
+    var dueClass = over ? 'color:#e24b4a; font-weight:500;' : (isTodayT ? 'color:var(--amber); font-weight:500;' : 'color:var(--tx2);');
+    
+    html += '<div style="display:flex; align-items:center; justify-content:space-between; font-size:12px; padding:6px 0; border-bottom:1px solid rgba(255,255,255,0.05);">'
+      + '<div style="display:flex; align-items:center; gap:8px; flex:1; min-width:0;">'
+      + '<input type="checkbox" onchange="toggleDealTaskFromInsideModal(\'' + t.id + '\', \'' + dealId + '\')" style="width:14px; height:14px; cursor:pointer; flex-shrink:0;">'
+      + '<span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="' + t.title + '">' + t.title + '</span>'
+      + '</div>'
+      + '<span style="font-size:11px; ' + dueClass + ' margin-left:8px;">' + dueLabel + '</span>'
+      + '</div>';
+  }
+  list.innerHTML = html;
+}
+
+function toggleDealTaskFromInsideModal(taskId, dealId) {
+  for (var i = 0; i < db.tasks.length; i++) {
+    if (db.tasks[i].id === taskId) {
+      db.tasks[i].done = true;
+      break;
+    }
+  }
+  saveDB();
+  renderDealTasks(dealId);
+  updatePendingBadge();
+  if (document.getElementById('view-tasks').classList.contains('active')) renderTasks();
+  if (document.getElementById('view-dashboard').classList.contains('active')) renderDash();
+  if (currentClient) openDetail(currentClient);
+}
+
+// TRASH / ELIMINADOS ENGINE
+var currentTrashTabType = 'client';
+
+function openTrashModal(type) {
+  currentTrashTabType = type || 'client';
+  mOpen('m-trash');
+  switchTrashTab(currentTrashTabType);
+}
+
+function switchTrashTab(type) {
+  currentTrashTabType = type;
+  var tabs = document.querySelectorAll('.t-tab');
+  for (var i = 0; i < tabs.length; i++) {
+    tabs[i].classList.remove('active');
+  }
+  var activeTab = document.getElementById('trash-tab-' + type);
+  if (activeTab) activeTab.classList.add('active');
+  renderTrashItems();
+}
+
+function renderTrashItems() {
+  var listEl = document.getElementById('trash-list');
+  var emptyEl = document.getElementById('trash-empty-state');
+  if (!listEl || !emptyEl) return;
+  if (!db.trash) db.trash = [];
+  var items = db.trash.filter(function(item) {
+    return item.type === currentTrashTabType;
+  });
+  if (items.length === 0) {
+    listEl.innerHTML = '';
+    emptyEl.style.display = 'block';
+    return;
+  }
+  emptyEl.style.display = 'none';
+  var html = '';
+  for (var i = items.length - 1; i >= 0; i--) {
+    var item = items[i];
+    var data = item.data;
+    var info = '';
+    var title = '';
+    if (item.type === 'client') {
+      title = data.name;
+      info = 'Empresa: ' + (data.company || '—') + ' · Correo: ' + (data.email || '—');
+    } else if (item.type === 'deal') {
+      title = data.title;
+      var cName = getClientName(data.clientId) || '—';
+      info = 'Cliente: ' + cName + ' · Valor: ' + Q(data.value);
+    } else if (item.type === 'quote') {
+      title = 'COT-' + String(data.number).padStart(3, '0') + ' (' + (data.clientName || '—') + ')';
+      info = 'Total: ' + Q(data.total) + ' · Fecha: ' + dt(data.date);
+    } else if (item.type === 'doc') {
+      title = data.name;
+      var cName = getClientName(data.clientId) || '—';
+      info = 'Tipo: ' + (DOC_TYPE_LABEL[data.type] || 'Otro') + ' · Cliente: ' + cName + ' · Fecha: ' + dt(data.date);
+    } else if (item.type === 'task') {
+      title = data.title;
+      var cName = getClientName(data.clientId) || '—';
+      var due = data.due ? dt(data.due) : 'Sin fecha';
+      info = 'Cliente: ' + cName + ' · Prioridad: ' + (data.priority || 'media') + ' · Vence: ' + due;
+    }
+    var timeStr = item.deletedAt ? new Date(item.deletedAt).toLocaleString('es-GT', {day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit'}) : '—';
+    html += '<div style="background:var(--sur); border:1px solid var(--br); border-radius:var(--r); padding:10px 14px; display:flex; justify-content:space-between; align-items:center; gap:12px;">'
+      + '<div style="min-width:0; flex:1;">'
+      + '<div style="font-weight:600; font-size:13px; color:var(--tx); margin-bottom:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">' + title + '</div>'
+      + '<div style="font-size:11px; color:var(--tx2); margin-bottom:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">' + info + '</div>'
+      + '<div style="font-size:10px; color:var(--tx3); font-style:italic;">Eliminado: ' + timeStr + '</div>'
+      + '</div>'
+      + '<div style="display:flex; gap:6px; flex-shrink:0;">'
+      + '<button class="btn btn-ghost btn-sm" onclick="restoreTrashItem(\'' + item.id + '\')" style="color:var(--teal); border-color:rgba(15,184,160,0.3); background:var(--tl);"><i style="font-style:normal;">↩️</i> Restaurar</button>'
+      + '<button class="btn btn-ghost btn-sm" onclick="permanentlyDeleteTrashItem(\'' + item.id + '\')" style="color:#e24b4a; border-color:rgba(226,75,74,0.3); background:rgba(226,75,74,0.05);"><i style="font-style:normal;">🗑️</i> Borrar</button>'
+      + '</div>'
+      + '</div>';
+  }
+  listEl.innerHTML = html;
+}
+
+function restoreTrashItem(trashId) {
+  if (!db.trash) return;
+  var found = null;
+  var index = -1;
+  for (var i = 0; i < db.trash.length; i++) {
+    if (db.trash[i].id === trashId) { found = db.trash[i]; index = i; break; }
+  }
+  if (!found) return;
+  db.trash.splice(index, 1);
+  var type = found.type;
+  var data = found.data;
+  if (type === 'client') {
+    db.clients.push(data);
+    for (var j = db.trash.length - 1; j >= 0; j--) {
+      if (db.trash[j].cascadeFromClient === trashId) {
+        var cascaded = db.trash.splice(j, 1)[0];
+        if (cascaded.type === 'deal') db.deals.push(cascaded.data);
+        else if (cascaded.type === 'quote') db.quotes.push(cascaded.data);
+        else if (cascaded.type === 'doc') db.docs.push(cascaded.data);
+        else if (cascaded.type === 'task') db.tasks.push(cascaded.data);
+      }
+    }
+  } else if (type === 'deal') {
+    db.deals.push(data);
+  } else if (type === 'quote') {
+    db.quotes.push(data);
+  } else if (type === 'doc') {
+    db.docs.push(data);
+  } else if (type === 'task') {
+    db.tasks.push(data);
+  }
+  saveDB();
+  renderTrashItems();
+  renderAllViews();
+}
+
+function renderAllViews() {
+  if (document.getElementById('view-dashboard').classList.contains('active')) renderDash();
+  if (document.getElementById('view-pipeline').classList.contains('active')) renderPipeline();
+  if (document.getElementById('view-clients').classList.contains('active')) {
+    renderClients();
+    var isDetailOpen = document.getElementById('clientDetail') && document.getElementById('clientDetail').classList.contains('open');
+    if (isDetailOpen && currentClient) openDetail(currentClient);
+  }
+  if (document.getElementById('view-quotes').classList.contains('active')) renderQuotes();
+  if (document.getElementById('view-finance').classList.contains('active')) renderFinance();
+  if (document.getElementById('view-tasks').classList.contains('active')) renderTasks();
+  if (document.getElementById('view-analytics').classList.contains('active')) renderAnalytics();
+  updatePendingBadge();
+}
+
+function permanentlyDeleteTrashItem(trashId) {
+  customConfirm('¿Eliminar definitivamente este elemento? Esta acción no se puede deshacer.', function() {
+    if (!db.trash) return;
+    var index = -1;
+    for (var i = 0; i < db.trash.length; i++) {
+      if (db.trash[i].id === trashId) { index = i; break; }
+    }
+    if (index > -1) {
+      var found = db.trash[index];
+      db.trash.splice(index, 1);
+      if (found.type === 'client') {
+        db.trash = db.trash.filter(function(item) {
+          return item.cascadeFromClient !== trashId;
+        });
+      }
+      saveDB();
+      renderTrashItems();
+      renderAllViews();
+    }
+  });
+}
+
+function emptyCurrentTrashTab() {
+  var count = db.trash.filter(function(item) { return item.type === currentTrashTabType; }).length;
+  if (count === 0) return;
+  customConfirm('¿Eliminar definitivamente ' + count + ' elementos de esta sección? Esta acción no se puede deshacer.', function() {
+    db.trash = db.trash.filter(function(item) {
+      if (item.type === currentTrashTabType) {
+        if (item.type === 'client') {
+          db.trash = db.trash.filter(function(sub) {
+            return sub.cascadeFromClient !== item.id;
+          });
+        }
+        return false;
+      }
+      return true;
+    });
+    saveDB();
+    renderTrashItems();
+    renderAllViews();
+  });
+}
+
+function getClientName(clientId) {
+  if (!clientId) return '';
+  for (var i = 0; i < db.clients.length; i++) {
+    if (db.clients[i].id === clientId) return db.clients[i].name;
+  }
+  if (db.trash) {
+    for (var i = 0; i < db.trash.length; i++) {
+      if (db.trash[i].type === 'client' && db.trash[i].id === clientId) {
+        return db.trash[i].data.name;
+      }
+    }
+  }
+  return '';
+}
+
+// SERVICIOS CONTRATADOS ENGINE
+function openContractedServiceModal(serviceId) {
+  var datalistEl = document.getElementById('cs-suggested-services');
+  if (datalistEl && datalistEl.children.length === 0) {
+    var dlHtml = '';
+    for (var i = 0; i < SERVICES.length; i++) {
+      dlHtml += '<option value="' + SERVICES[i].name + '">';
+    }
+    datalistEl.innerHTML = dlHtml;
+  }
+
+  var c = null;
+  for (var i = 0; i < db.clients.length; i++) {
+    if (db.clients[i].id === currentClient) { c = db.clients[i]; break; }
+  }
+  if (!c) { alert('No se ha detectado el cliente actual'); return; }
+
+  var srv = null;
+  if (serviceId) {
+    var list = c.contractedServices || [];
+    for (var i = 0; i < list.length; i++) {
+      if (list[i].id === serviceId) { srv = list[i]; break; }
+    }
+  }
+
+  document.getElementById('m-contracted-service-title').textContent = srv ? 'Editar servicio contratado' : 'Agregar servicio contratado';
+  document.getElementById('cs-name').value = srv ? srv.name : '';
+  document.getElementById('cs-requested-date').value = srv ? srv.requestedDate : new Date().toISOString().split('T')[0];
+  document.getElementById('cs-finished-date').value = srv ? (srv.finishedDate || '') : '';
+  document.getElementById('cs-initial-payment').value = srv ? (srv.initialPayment || 0) : 0;
+  document.getElementById('cs-status').value = srv ? (srv.status || 'activo') : 'activo';
+  document.getElementById('cs-monthly-payment').value = srv ? (srv.monthlyPayment || 0) : 0;
+  document.getElementById('cs-yearly-payment').value = srv ? (srv.yearlyPayment || 0) : 0;
+  document.getElementById('cs-notes').value = srv ? (srv.notes || '') : '';
+  document.getElementById('cs-id').value = srv ? srv.id : '';
+
+  mOpen('m-contracted-service');
+}
+
+function saveContractedService() {
+  var name = document.getElementById('cs-name').value.trim();
+  var reqDate = document.getElementById('cs-requested-date').value;
+  if (!name || !reqDate) {
+    alert('El nombre del servicio y la fecha de solicitud son obligatorios');
+    return;
+  }
+
+  var c = null;
+  for (var i = 0; i < db.clients.length; i++) {
+    if (db.clients[i].id === currentClient) { c = db.clients[i]; break; }
+  }
+  if (!c) {
+    alert('Cliente no encontrado');
+    return;
+  }
+
+  c.contractedServices = c.contractedServices || [];
+  var srvId = document.getElementById('cs-id').value;
+
+  var srvData = {
+    name: name,
+    requestedDate: reqDate,
+    finishedDate: document.getElementById('cs-finished-date').value,
+    initialPayment: parseFloat(document.getElementById('cs-initial-payment').value) || 0,
+    status: document.getElementById('cs-status').value,
+    monthlyPayment: parseFloat(document.getElementById('cs-monthly-payment').value) || 0,
+    yearlyPayment: parseFloat(document.getElementById('cs-yearly-payment').value) || 0,
+    notes: document.getElementById('cs-notes').value.trim()
+  };
+
+  if (srvId) {
+    for (var i = 0; i < c.contractedServices.length; i++) {
+      if (c.contractedServices[i].id === srvId) {
+        Object.assign(c.contractedServices[i], srvData);
+        break;
+      }
+    }
+  } else {
+    srvData.id = uid();
+    c.contractedServices.push(srvData);
+  }
+
+  saveDB();
+  mClose('m-contracted-service');
+  openDetail(currentClient);
+}
+
+function deleteContractedService(serviceId) {
+  customConfirm('¿Eliminar definitivamente este servicio/contrato del listado?', function() {
+    var c = null;
+    for (var i = 0; i < db.clients.length; i++) {
+      if (db.clients[i].id === currentClient) { c = db.clients[i]; break; }
+    }
+    if (!c) return;
+    
+    c.contractedServices = (c.contractedServices || []).filter(function(s) {
+      return s.id !== serviceId;
+    });
+    
+    saveDB();
+    openDetail(currentClient);
+  });
+}
+
+// Register global functions
+window.openContractedServiceModal = openContractedServiceModal;
+window.saveContractedService = saveContractedService;
+window.deleteContractedService = deleteContractedService;
+window.openTrashModal = openTrashModal;
+window.switchTrashTab = switchTrashTab;
+window.restoreTrashItem = restoreTrashItem;
+window.permanentlyDeleteTrashItem = permanentlyDeleteTrashItem;
+window.emptyCurrentTrashTab = emptyCurrentTrashTab;
+window.getClientName = getClientName;
+window.renderAllViews = renderAllViews;
+
+window.handleLogin = handleLogin;
+window.logout = logout;
+window.checkAuth = checkAuth;
+window.dragDeal = dragDeal;
+window.dragEndDeal = dragEndDeal;
+window.allowDropDeal = allowDropDeal;
+window.dragEnterColumn = dragEnterColumn;
+window.dragLeaveColumn = dragLeaveColumn;
+window.dropDeal = dropDeal;
+window.toggleDealTaskSection = toggleDealTaskSection;
+window.calcDealTaskDate = calcDealTaskDate;
+window.updateDefaultDealTaskTitle = updateDefaultDealTaskTitle;
+window.renderDealTasks = renderDealTasks;
+window.toggleDealTaskFromInsideModal = toggleDealTaskFromInsideModal;
+window.openQuoteModal = openQuoteModal;
+window.loadDefaultTerms = loadDefaultTerms;
+window.toggleSvc = toggleSvc;
+window.syncEditedQuoteItems = syncEditedQuoteItems;
+window.updateQuoteTotals = updateQuoteTotals;
+window.updateLiveQuotePreview = updateLiveQuotePreview;
+window.saveQuote = saveQuote;
+window.deleteQuote = deleteQuote;
+window.viewPDF = viewPDF;
+window.printQuote = printQuote;
+window.downloadQuotePDF = downloadQuotePDF;
+window.deleteTaskDirect = deleteTaskDirect;
+window.toggleTask = toggleTask;
+window.openTaskModal = openTaskModal;
+window.saveTask = saveTask;
+window.delTask = delTask;
+window.customConfirm = customConfirm;
+
+function adjustPreviewScale() {
+  var printArea = document.getElementById('print-area');
+  var pdfBody = document.getElementById('pdf-body');
+  var wrapper = document.getElementById('print-wrapper-outer');
+  if (!printArea || !pdfBody || !wrapper) return;
+  
+  var availableWidth = pdfBody.clientWidth;
+  if (!availableWidth) {
+    var modal = pdfBody.closest('.modal');
+    if (modal) {
+      availableWidth = modal.clientWidth;
+    }
+  }
+  
+  var style = window.getComputedStyle(pdfBody);
+  var paddingLeft = parseFloat(style.paddingLeft) || 0;
+  var paddingRight = parseFloat(style.paddingRight) || 0;
+  var targetWidth = availableWidth - paddingLeft - paddingRight;
+  
+  if (targetWidth > 0 && targetWidth < 720) {
+    var scale = targetWidth / 720;
+    printArea.style.transform = 'scale(' + scale + ')';
+    printArea.style.transformOrigin = 'top center';
+    wrapper.style.height = (printArea.scrollHeight * scale) + 'px';
+  } else {
+    printArea.style.transform = 'none';
+    wrapper.style.height = 'auto';
+  }
+}
+window.adjustPreviewScale = adjustPreviewScale;
+window.addEventListener('resize', adjustPreviewScale);
+
+// INIT
+checkAuth();
+</script>
+</body>
+</html>

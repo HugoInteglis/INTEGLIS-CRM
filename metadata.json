@@ -1,0 +1,6 @@
+{
+  "name": "Integlis CRM",
+  "description": "CRM completo para gestionar clientes, pipeline de ventas, cotizaciones, finanzas y tareas de Integlis.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
