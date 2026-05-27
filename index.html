@@ -4979,13 +4979,18 @@ checkAuth();
     }
   };
 
+  window.hasPendingSave = false;
   // Override saveDB to sync to Firestore differentially
   window.saveDB = async function() {
     if (originalSaveDB) originalSaveDB();
     if (window.clearActiveModalDraft) window.clearActiveModalDraft();
 
     if (!auth.currentUser) return;
-    if (window.isSavingToFirebase) return;
+    if (window.isSavingToFirebase) {
+      window.hasPendingSave = true;
+      console.log("Firebase sync in progress. Queued subsequent sync.");
+      return;
+    }
 
     window.isSavingToFirebase = true;
     const syncText = document.getElementById('cloud-sync-text');
@@ -5002,14 +5007,20 @@ checkAuth();
         // Save new and updated
         for (const item of localList) {
           if (!item.id) continue;
+          
+          item.ownerId = uid; // Keep local state in sync with ownerId
           const cachedItem = cacheList.find(c => c.id === item.id);
+          
           const itemStr = JSON.stringify(item);
-          const cachedStr = cachedItem ? JSON.stringify(cachedItem) : null;
+          let cachedStr = null;
+          if (cachedItem) {
+            cachedItem.ownerId = uid; // Normalize cached item ownerId for accurate comparison
+            cachedStr = JSON.stringify(cachedItem);
+          }
 
           if (!cachedItem || itemStr !== cachedStr) {
             const docRef = doc(firestoreDB, key, item.id);
             const clonedObj = JSON.parse(itemStr);
-            clonedObj.ownerId = uid;
             try {
               await setDoc(docRef, clonedObj);
             } catch(e) {
@@ -5043,6 +5054,11 @@ checkAuth();
       if (syncDot) syncDot.style.backgroundColor = '#e24b4a';
     } finally {
       window.isSavingToFirebase = false;
+      if (window.hasPendingSave) {
+        window.hasPendingSave = false;
+        console.log("Executing queued Firebase sync...");
+        window.saveDB();
+      }
     }
   };
 
@@ -5132,7 +5148,7 @@ checkAuth();
       }
 
       COLLECTIONS.forEach(key => {
-        const q = collection(firestoreDB, key);
+        const q = query(collection(firestoreDB, key), where("ownerId", "==", user.uid));
         const unsub = onSnapshot(q, (snapshot) => {
           const fetchedList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
           window.firestoreCache[key] = JSON.parse(JSON.stringify(fetchedList));
