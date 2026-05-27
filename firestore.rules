@@ -85,13 +85,16 @@ service cloud.firestore {
     function isValidTask(t) {
       return t.id is string && t.id.size() >= 2 && t.id.size() <= 128
         && t.ownerId is string && t.ownerId == request.auth.uid
-        && t.clientId is string && t.clientId.size() >= 2 && t.clientId.size() <= 128
+        && (t.clientId == null || (t.clientId is string && t.clientId.size() <= 128))
         && t.title is string && t.title.size() >= 1 && t.title.size() <= 500
         && t.done is bool
         && (t.due == null || (t.due is string && t.due.size() <= 50))
         && (t.priority == null || (t.priority is string && t.priority.size() <= 50))
         && (t.category == null || (t.category is string && t.category.size() <= 100))
-        && (t.notes == null || (t.notes is string && t.notes.size() <= 10000));
+        && (t.notes == null || (t.notes is string && t.notes.size() <= 10000))
+        && (t.dealId == null || (t.dealId is string && t.dealId.size() <= 128))
+        && (t.quoteId == null || (t.quoteId is string && t.quoteId.size() <= 128))
+        && (t.docId == null || (t.docId is string && t.docId.size() <= 128));
     }
 
     function isValidTrash(r) {

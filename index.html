@@ -833,6 +833,17 @@ textarea{resize:vertical;min-height:75px;line-height:1.5}
           <select id="t-cat"><option value="seguimiento">Seguimiento</option><option value="propuesta">Propuesta</option><option value="reunion">Reunión</option><option value="admin">Administración</option><option value="otro">Otro</option></select>
         </div>
       </div>
+      <div class="fr">
+        <div class="fg"><label class="fl">Oportunidad asociada (Deal)</label>
+          <select id="t-deal"></select>
+        </div>
+        <div class="fg"><label class="fl">Cotización asociada</label>
+          <select id="t-quote"></select>
+        </div>
+      </div>
+      <div class="fg"><label class="fl">Documento asociado</label>
+        <select id="t-doc"></select>
+      </div>
       <div class="fg"><label class="fl">Notas</label><textarea id="t-notes" placeholder="Detalles adicionales..."></textarea></div>
       <input type="hidden" id="t-id">
     </div>
@@ -2719,6 +2730,27 @@ function taskRow(t, compact) {
   var tod = isToday(t.due) && !t.done;
   var dueClass = od ? 'overdue' : tod ? 'today' : '';
   var dueColor = od ? '#e24b4a' : tod ? 'var(--amber)' : 'var(--tx2)';
+
+  var assocHtml = '';
+  if (t.dealId) {
+    var dl = db.deals.find(function(d){ return d.id === t.dealId; });
+    if (dl) {
+      assocHtml += '<span onclick="event.stopPropagation(); openDealModal(\'' + dl.id + '\')" style="background:rgba(124,111,224,0.08);color:var(--purple);border:1px solid rgba(124,111,224,0.15);padding:1px 6px;border-radius:8px;font-size:11px;cursor:pointer;display:inline-flex;align-items:center;gap:3px;" title="Ver oportunidad asociada">💼 ' + dl.title + '</span>';
+    }
+  }
+  if (t.quoteId) {
+    var q = db.quotes.find(function(qObj){ return qObj.id === t.quoteId; });
+    if (q) {
+      assocHtml += '<span onclick="event.stopPropagation(); viewPDF(\'' + q.id + '\')" style="background:rgba(15,184,160,0.08);color:var(--teal);border:1px solid rgba(15,184,160,0.15);padding:1px 6px;border-radius:8px;font-size:11px;cursor:pointer;display:inline-flex;align-items:center;gap:3px;" title="Ver cotización asociada">📄 COT-' + String(q.number).padStart(3, '0') + '</span>';
+    }
+  }
+  if (t.docId) {
+    var docObj = db.docs.find(function(dObj){ return dObj.id === t.docId; });
+    if (docObj) {
+      assocHtml += '<span onclick="event.stopPropagation(); openDocModal(null,\'' + docObj.id + '\')" style="background:rgba(245,166,35,0.08);color:var(--amber);border:1px solid rgba(245,166,35,0.15);padding:1px 6px;border-radius:8px;font-size:11px;cursor:pointer;display:inline-flex;align-items:center;gap:3px;" title="Editar documento asociado">📎 ' + docObj.name + '</span>';
+    }
+  }
+
   return '<div class="task-item">'
     + '<div class="prio-dot" style="background:' + (PRIO_COLOR[t.priority]||'#888') + '"></div>'
     + '<div class="task-cb ' + (t.done?'done':'') + '" onclick="toggleTask(\'' + t.id + '\')">' + (t.done?'&#10003;':'') + '</div>'
@@ -2728,6 +2760,7 @@ function taskRow(t, compact) {
     + (t.due ? '<span class="task-due" style="color:' + dueColor + '">' + (od?'Vencida · ':tod?'Hoy · ':'') + dt(t.due) + '</span>' : '')
     + (cl ? '<span>' + cl.name + '</span>' : '')
     + (t.category ? '<span style="background:var(--sur2);padding:1px 6px;border-radius:8px;font-size:11px">' + t.category + '</span>' : '')
+    + assocHtml
     + '</div></div>'
     + '<div style="display:flex; gap:6px; align-items:center;">'
     + '<button type="button" class="bi btn-sm" onclick="event.stopPropagation(); openTaskModal(null,\'' + t.id + '\')" title="Editar tarea">&#9998;</button>'
@@ -2785,6 +2818,7 @@ function openTaskModal(clientId, taskId) {
   document.getElementById('t-notes').value = t ? (t.notes||'') : '';
   document.getElementById('t-id').value = t ? t.id : '';
   document.getElementById('t-del-btn').style.display = t ? 'inline-flex' : 'none';
+  
   var sel = document.getElementById('t-client');
   sel.innerHTML = '<option value="">— Sin cliente —</option>';
   for (var i = 0; i < db.clients.length; i++) {
@@ -2794,6 +2828,58 @@ function openTaskModal(clientId, taskId) {
     sel.appendChild(opt);
   }
   sel.value = t ? (t.clientId||'') : (clientId||'');
+
+  // Populate Deals dropdown
+  var dealSel = document.getElementById('t-deal');
+  dealSel.innerHTML = '<option value="">— Sin negocio / oportunidad —</option>';
+  for (var i = 0; i < db.deals.length; i++) {
+    var d = db.deals[i];
+    var opt = document.createElement('option');
+    opt.value = d.id;
+    var clientLabel = '';
+    if (d.clientId) {
+      var xc = db.clients.find(function(c){ return c.id === d.clientId; });
+      if (xc) clientLabel = ' (' + xc.name + ')';
+    }
+    opt.textContent = d.title + clientLabel;
+    dealSel.appendChild(opt);
+  }
+  dealSel.value = t ? (t.dealId||'') : '';
+
+  // Populate Quotes dropdown
+  var quoteSel = document.getElementById('t-quote');
+  quoteSel.innerHTML = '<option value="">— Sin cotización —</option>';
+  for (var i = 0; i < db.quotes.length; i++) {
+    var q = db.quotes[i];
+    var opt = document.createElement('option');
+    opt.value = q.id;
+    var clientLabel = q.clientName || q.clientCompany || '';
+    if (!clientLabel && q.clientId) {
+      var xc = db.clients.find(function(c){ return c.id === q.clientId; });
+      if (xc) clientLabel = xc.name;
+    }
+    opt.textContent = 'COT-' + String(q.number).padStart(3, '0') + (q.total ? ' (Q' + q.total + ')' : '') + (clientLabel ? ' — ' + clientLabel : '');
+    quoteSel.appendChild(opt);
+  }
+  quoteSel.value = t ? (t.quoteId||'') : '';
+
+  // Populate Docs dropdown
+  var docSel = document.getElementById('t-doc');
+  docSel.innerHTML = '<option value="">— Sin documento —</option>';
+  for (var i = 0; i < db.docs.length; i++) {
+    var d = db.docs[i];
+    var opt = document.createElement('option');
+    opt.value = d.id;
+    var clientLabel = '';
+    if (d.clientId) {
+      var xc = db.clients.find(function(c){ return c.id === d.clientId; });
+      if (xc) clientLabel = ' — ' + xc.name;
+    }
+    opt.textContent = d.name + ' (' + d.type + ')' + clientLabel;
+    docSel.appendChild(opt);
+  }
+  docSel.value = t ? (t.docId||'') : '';
+
   mOpen('m-task');
 }
 function saveTask() {
@@ -2807,6 +2893,9 @@ function saveTask() {
     priority:document.getElementById('t-priority').value,
     category:document.getElementById('t-cat').value,
     clientId:document.getElementById('t-client').value,
+    dealId:document.getElementById('t-deal').value,
+    quoteId:document.getElementById('t-quote').value,
+    docId:document.getElementById('t-doc').value,
     notes:document.getElementById('t-notes').value.trim(),
     done:existingDone, createdAt:new Date().toISOString()};
   if (id) { for (var i = 0; i < db.tasks.length; i++) { if (db.tasks[i].id === id) { Object.assign(db.tasks[i], data); break; } } }
@@ -3675,6 +3764,17 @@ checkAuth();
   const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
   const auth = getAuth(app);
 
+  // Connect and backup window.db immediately to prevent accidental wipes during initialization
+  if (window.db) {
+    window.initialLocalData = JSON.parse(JSON.stringify(window.db));
+  } else if (typeof db !== 'undefined') {
+    window.db = db;
+    window.initialLocalData = JSON.parse(JSON.stringify(db));
+  } else {
+    window.db = { clients: [], deals: [], quotes: [], docs: [], tasks: [], trash: [] };
+    window.initialLocalData = { clients: [], deals: [], quotes: [], docs: [], tasks: [], trash: [] };
+  }
+
   const COLLECTIONS = ['clients', 'deals', 'quotes', 'docs', 'tasks', 'trash'];
   window.firestoreCache = {};
   window.loadedCollections = {};
@@ -3788,23 +3888,18 @@ checkAuth();
     }
   };
 
-  function hasLocalCacheData() {
-    try {
-      const localStr = localStorage.getItem('integlis_crm4');
-      if (localStr) {
-        const parsed = JSON.parse(localStr);
-        return (parsed.clients && parsed.clients.length > 0) || 
-               (parsed.deals && parsed.deals.length > 0) ||
-               (parsed.quotes && parsed.quotes.length > 0) ||
-               (parsed.docs && parsed.docs.length > 0) ||
-               (parsed.tasks && parsed.tasks.length > 0);
-      }
-    } catch(e) {}
-    return false;
+  function hasInitialLocalData() {
+    const parsed = window.initialLocalData;
+    if (!parsed) return false;
+    return (parsed.clients && parsed.clients.length > 0) || 
+           (parsed.deals && parsed.deals.length > 0) ||
+           (parsed.quotes && parsed.quotes.length > 0) ||
+           (parsed.docs && parsed.docs.length > 0) ||
+           (parsed.tasks && parsed.tasks.length > 0);
   }
 
-  async function bootstrapLocalDataToCloud() {
-    console.log("Blank cloud project database detected. Syncing existing local client data...");
+  async function bootstrapInitialLocalDataToCloud() {
+    console.log("Blank cloud project database detected. Syncing existing initial local client data...");
     const syncText = document.getElementById('cloud-sync-text');
     const syncDot = document.getElementById('cloud-sync-dot');
     if (syncText) syncText.textContent = 'Subiendo datos...';
@@ -3812,9 +3907,8 @@ checkAuth();
     window.isSavingToFirebase = true;
 
     try {
-      const localStr = localStorage.getItem('integlis_crm4');
-      if (localStr) {
-        const parsed = JSON.parse(localStr);
+      const parsed = window.initialLocalData;
+      if (parsed) {
         for (const key of COLLECTIONS) {
           const list = parsed[key] || [];
           for (const item of list) {
@@ -3831,6 +3925,10 @@ checkAuth();
       window.isSavingToFirebase = false;
       if (syncText) syncText.textContent = 'Sincronizado';
       if (syncDot) syncDot.style.backgroundColor = '#0FB8A0';
+      COLLECTIONS.forEach(k => {
+        window.db[k] = window.initialLocalData[k] || [];
+      });
+      localStorage.setItem('integlis_crm4', JSON.stringify(window.db));
       if (typeof window.renderAllViews === 'function') {
         window.renderAllViews();
       }
@@ -4025,24 +4123,25 @@ checkAuth();
           window.firestoreCache[key] = JSON.parse(JSON.stringify(fetchedList));
 
           if (!window.isSavingToFirebase) {
-            window.db[key] = fetchedList;
-            localStorage.setItem('integlis_crm4', JSON.stringify(window.db));
-            
             window.loadedCollections[key] = true;
             if (allCollectionsLoaded()) {
               if (syncText) syncText.textContent = 'Sincronizado';
               if (syncDot) syncDot.style.backgroundColor = '#0FB8A0';
 
-              if (typeof window.ensureLuisMejiaQuote === 'function') {
-                window.ensureLuisMejiaQuote();
-              }
-
-              if (isFirestoreEmpty() && hasLocalCacheData()) {
-                bootstrapLocalDataToCloud();
+              if (isFirestoreEmpty() && hasInitialLocalData()) {
+                bootstrapInitialLocalDataToCloud();
               } else {
+                COLLECTIONS.forEach(k => {
+                  window.db[k] = window.firestoreCache[k] || [];
+                });
+                localStorage.setItem('integlis_crm4', JSON.stringify(window.db));
                 if (typeof window.renderAllViews === 'function') {
                   window.renderAllViews();
                 }
+              }
+
+              if (typeof window.ensureLuisMejiaQuote === 'function') {
+                window.ensureLuisMejiaQuote();
               }
             }
           }
