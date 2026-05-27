@@ -162,8 +162,12 @@ textarea{resize:vertical;min-height:75px;line-height:1.5}
 .sn{font-size:12px;font-weight:500;color:var(--tx);margin-bottom:2px}
 .sp{font-size:11px;color:var(--tx2)}
 .so.on .sn{color:var(--purple)}.so.on .sp{color:var(--purple)}
-.sr{display:flex;gap:8px;margin-bottom:1rem}
-.sr input{flex:1}.sr select{width:auto}
+.sr{display:flex;gap:8px;margin-bottom:1rem;flex-wrap:wrap}
+.sr input{flex:1;min-width:180px}.sr select{width:auto}
+@media(max-width: 600px) {
+  .sr { flex-direction: column; align-items: stretch; }
+  .sr select { width: 100% !important; }
+}
 .empty{text-align:center;padding:3rem 1rem;color:var(--tx2)}
 .empty i{font-size:36px;opacity:.35;display:block;margin-bottom:.75rem}
 .task-item{display:flex;align-items:flex-start;gap:12px;padding:12px 0;border-bottom:1px solid var(--br)}
@@ -178,8 +182,9 @@ textarea{resize:vertical;min-height:75px;line-height:1.5}
 .task-due.today{color:var(--amber)}
 .prio-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:6px}
 .doc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px}
-.fin-tabs{display:flex;border-bottom:1px solid var(--br);margin-bottom:1rem}
-.ft{padding:8px 14px;font-size:13px;background:none;border:none;border-bottom:2px solid transparent;cursor:pointer;color:var(--tx2);font-family:'DM Sans',sans-serif;transition:all .15s}
+.fin-tabs{display:flex;border-bottom:1px solid var(--br);margin-bottom:1rem;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.fin-tabs::-webkit-scrollbar{display:none}
+.ft{padding:8px 14px;font-size:13px;background:none;border:none;border-bottom:2px solid transparent;cursor:pointer;color:var(--tx2);font-family:'DM Sans',sans-serif;transition:all .15s;flex-shrink:0}
 .ft.active{color:var(--purple);border-bottom-color:var(--purple)}
 .type-chip{font-size:11px;padding:2px 8px;border-radius:12px;font-weight:500}
 .tc-factura{background:#e6f1fb;color:#185fa5}
@@ -342,6 +347,28 @@ textarea{resize:vertical;min-height:75px;line-height:1.5}
   animation: confetti-pop 0.75s cubic-bezier(0.1, 0.8, 0.3, 1) forwards;
   z-index: 10000;
 }
+
+/* GLOBAL RESPONSIVENESS OVERRIDES */
+@media (max-width: 600px) {
+  .welcome-banner {
+    flex-direction: column;
+    align-items: flex-start !important;
+    gap: 14px;
+    padding: 16px 20px !important;
+  }
+  .welcome-banner h2 {
+    font-size: 18px !important;
+  }
+  .welcome-banner p {
+    font-size: 12.5px !important;
+  }
+}
+
+/* Auto horizontal scroll for all tables inside tables container card */
+.card-table-scroll {
+  overflow-x: auto !important;
+  -webkit-overflow-scrolling: touch !important;
+}
 </style>
 </head>
 <body>
@@ -487,7 +514,7 @@ textarea{resize:vertical;min-height:75px;line-height:1.5}
         <option value="Cliente Pasado">Cliente Pasado</option>
       </select>
     </div>
-    <div class="card" style="padding:0;overflow:hidden">
+    <div class="card card-table-scroll" style="padding:0;overflow:hidden">
       <table class="tbl"><thead><tr><th>Cliente</th><th>Empresa</th><th>Teléfono</th><th>Estado</th><th>Próximo Cobro</th><th>Industria</th><th>Acciones</th></tr></thead>
       <tbody id="clients-body"></tbody></table>
     </div>
@@ -566,24 +593,24 @@ textarea{resize:vertical;min-height:75px;line-height:1.5}
 
   <!-- Search & Filters Panel -->
   <div class="card" style="margin-bottom:1rem; padding: 12px 16px; border-color: rgba(124,111,224,0.12); display: flex; flex-wrap: wrap; gap: 10px; align-items: center; background: rgba(124,111,224,0.015);">
-    <div style="flex:1; min-width:220px; display:flex; align-items:center; background:var(--bg); border:1px solid var(--br); border-radius:8px; padding:0 10px; height:36px;">
+    <div style="flex:1; min-width:240px; display:flex; align-items:center; background:var(--bg); border:1px solid var(--br); border-radius:8px; padding:0 10px; height:36px;">
       <span style="font-size:13px; margin-right:6px; opacity:0.65;">🔍</span>
       <input id="task-search" placeholder="Buscar por título, notas, categoría..." style="border:none; background:transparent; font-size:13px; color:var(--tx); width:100%; outline:none;" oninput="renderTasks()">
     </div>
     
-    <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
-      <select id="task-filter" onchange="renderTasks()" style="width:130px; margin:0; font-size:12.5px; height:36px; background:var(--bg);">
+    <div class="task-filters-row" style="display:flex; gap:8px; flex-wrap:wrap; align-items:center; flex:1.5; min-width:280px; width:100%;">
+      <select id="task-filter" onchange="renderTasks()" style="flex:1; min-width:115px; margin:0; font-size:12.5px; height:36px; background:var(--bg);">
         <option value="pending">Pendientes</option>
         <option value="all">Todas</option>
         <option value="done">Completadas</option>
       </select>
-      <select id="task-prio-filter" onchange="renderTasks()" style="width:130px; margin:0; font-size:12.5px; height:36px; background:var(--bg);">
+      <select id="task-prio-filter" onchange="renderTasks()" style="flex:1.2; min-width:165px; margin:0; font-size:12.5px; height:36px; background:var(--bg);">
         <option value="all">Prioridad (Cualquiera)</option>
         <option value="alta">Prioridad Alta</option>
         <option value="media">Prioridad Media</option>
         <option value="baja">Prioridad Baja</option>
       </select>
-      <select id="task-client-filter" onchange="renderTasks()" style="width:170px; margin:0; font-size:12.5px; height:36px; background:var(--bg);">
+      <select id="task-client-filter" onchange="renderTasks()" style="flex:1.5; min-width:165px; margin:0; font-size:12.5px; height:36px; background:var(--bg);">
         <option value="">Cliente (Todos)</option>
       </select>
     </div>
@@ -605,16 +632,16 @@ textarea{resize:vertical;min-height:75px;line-height:1.5}
         <span style="font-size:14px; animation: pulse-subtle 2s infinite; cursor:default;" title="Agregar tarea rápidamente">⚡</span>
         <input id="quick-task-title" placeholder="Escribe una tarea rápida (ej. Llamar a Laura para seguimiento) y presiona Enter..." style="flex:1; border:none; background:transparent; font-size:13px; padding:4px 0; outline:none; color:var(--tx);" autocomplete="off">
       </div>
-      <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
-        <select id="quick-task-priority" style="width:115px; margin:0; font-size:12px; border:1px solid var(--br); border-radius:6px; padding:4px 8px; height:32px; background:var(--bg);">
+      <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap; flex:1.2; min-width:280px; width:100%;">
+        <select id="quick-task-priority" style="flex:1; min-width:115px; margin:0; font-size:12px; border:1px solid var(--br); border-radius:6px; padding:4px 8px; height:32px; background:var(--bg);">
           <option value="baja">Prioridad Baja</option>
           <option value="media" selected>Prioridad Media</option>
           <option value="alta">Prioridad Alta</option>
         </select>
-        <select id="quick-task-client" style="width:150px; margin:0; font-size:12px; border:1px solid var(--br); border-radius:6px; padding:4px 8px; height:32px; background:var(--bg);">
+        <select id="quick-task-client" style="flex:1.5; min-width:145px; margin:0; font-size:12px; border:1px solid var(--br); border-radius:6px; padding:4px 8px; height:32px; background:var(--bg);">
           <option value="">— Sin cliente —</option>
         </select>
-        <button type="submit" class="btn btn-primary btn-sm" style="font-size:12px; height:32px; font-weight:600; padding:0 14px; display:inline-flex; align-items:center; justify-content:center; border-radius:6px;">Agregar</button>
+        <button type="submit" class="btn btn-primary btn-sm" style="flex:0.5; min-width:80px; font-size:12px; height:32px; font-weight:600; padding:0 14px; display:inline-flex; align-items:center; justify-content:center; border-radius:6px;">Agregar</button>
       </div>
     </form>
   </div>
@@ -1061,13 +1088,13 @@ textarea{resize:vertical;min-height:75px;line-height:1.5}
 
 <!-- MODAL: CONFIRM -->
 <div class="backdrop" id="m-confirm" style="z-index: 9999;" onclick="bgClose(event,'m-confirm')">
-  <div class="modal" style="max-width: 380px;">
+  <div class="modal" style="max-width: 440px; width: 95%;">
     <div class="mh">
-      <span class="mt2" id="confirm-title" style="font-weight: 600;">Confirmar acción</span>
+      <span class="mt2" id="confirm-title" style="font-weight: 600; font-size: 16px; color: var(--tx);">Confirmar acción</span>
       <button class="cbtn" onclick="mClose('m-confirm')">&#10005;</button>
     </div>
-    <div class="mb2" style="padding: 10px 0;">
-      <p id="confirm-message" style="font-size: 14px; color: var(--tx2); line-height: 1.5; margin: 0;"></p>
+    <div class="mb2" style="padding: 1.25rem 1.5rem;">
+      <p id="confirm-message" style="font-size: 14px; color: var(--tx2); line-height: 1.6; margin: 0; word-break: break-word;"></p>
     </div>
     <div class="mf" style="justify-content: flex-end; gap: 8px;">
       <button class="btn btn-ghost" onclick="mClose('m-confirm')">Cancelar</button>
@@ -2528,7 +2555,7 @@ function renderQuotes() {
   var el = document.getElementById('quotes-body');
   if (!db.quotes.length) { el.innerHTML = '<div class="empty">Sin cotizaciones aún.</div>'; return; }
   var rows = db.quotes.slice().reverse();
-  var html = '<div class="card" style="padding:0;overflow:hidden"><table class="tbl"><thead><tr><th>N°</th><th>Cliente</th><th>Fecha</th><th>Servicios</th><th>Total</th><th>Acciones</th></tr></thead><tbody>';
+  var html = '<div class="card card-table-scroll" style="padding:0;overflow:hidden"><table class="tbl"><thead><tr><th>N°</th><th>Cliente</th><th>Fecha</th><th>Servicios</th><th>Total</th><th>Acciones</th></tr></thead><tbody>';
   for (var i = 0; i < rows.length; i++) {
     var q = rows[i];
     html += '<tr><td style="font-weight:500">COT-' + String(q.number).padStart(3,'0') + '</td>'
@@ -2864,7 +2891,7 @@ function renderFinance() {
   var el = document.getElementById('fin-body');
   if (!docs.length) { el.innerHTML = '<div class="empty">Sin documentos' + (finTab !== 'all' ? ' de este tipo' : '') + ' aún.</div>'; return; }
   var reversed = docs.slice().reverse();
-  var html = '<div class="card" style="padding:0;overflow:hidden"><table class="tbl"><thead><tr><th>Documento</th><th>Tipo</th><th>Cliente</th><th>Fecha</th><th>Monto</th><th>Estado</th><th>Acciones</th></tr></thead><tbody>';
+  var html = '<div class="card card-table-scroll" style="padding:0;overflow:hidden"><table class="tbl"><thead><tr><th>Documento</th><th>Tipo</th><th>Cliente</th><th>Fecha</th><th>Monto</th><th>Estado</th><th>Acciones</th></tr></thead><tbody>';
   for (var i = 0; i < reversed.length; i++) {
     var d = reversed[i];
     var cl = null; for (var j = 0; j < db.clients.length; j++) { if (db.clients[j].id === d.clientId) { cl = db.clients[j]; break; } }
