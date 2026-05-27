@@ -5132,7 +5132,7 @@ checkAuth();
       }
 
       COLLECTIONS.forEach(key => {
-        const q = query(collection(firestoreDB, key), where("ownerId", "==", user.uid));
+        const q = collection(firestoreDB, key);
         const unsub = onSnapshot(q, (snapshot) => {
           const fetchedList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
           window.firestoreCache[key] = JSON.parse(JSON.stringify(fetchedList));

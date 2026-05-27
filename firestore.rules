@@ -12,99 +12,34 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    function isOwner(data) {
-      return data.ownerId == request.auth.uid;
-    }
-
-    function isValidId(id) {
-      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
-    }
-
-    function incoming() {
-      return request.resource.data;
-    }
-
-    function existing() {
-      return resource.data;
-    }
-
-    // Entity validation validators (checks document ownership and string ID layout to allow diverse schema versions)
-    function isValidClient(c) {
-      return c.id is string && c.ownerId is string && c.ownerId == request.auth.uid;
-    }
-
-    function isValidDeal(d) {
-      return d.id is string && d.ownerId is string && d.ownerId == request.auth.uid;
-    }
-
-    function isValidQuote(q) {
-      return q.id is string && q.ownerId is string && q.ownerId == request.auth.uid;
-    }
-
-    function isValidDoc(o) {
-      return o.id is string && o.ownerId is string && o.ownerId == request.auth.uid;
-    }
-
-    function isValidTask(t) {
-      return t.id is string && t.ownerId is string && t.ownerId == request.auth.uid;
-    }
-
-    function isValidTrash(r) {
-      return r.id is string && r.ownerId is string && r.ownerId == request.auth.uid;
-    }
-
     // Clients Collection Rules
     match /clients/{clientId} {
-      allow get: if isSignedIn() && isOwner(existing());
-      allow list: if isSignedIn() && existing().ownerId == request.auth.uid;
-      allow create: if isSignedIn() && isValidClient(incoming());
-      allow update: if isSignedIn() && isValidClient(incoming()) && isOwner(existing());
-      allow delete: if isSignedIn() && isOwner(existing());
+      allow read, write: if isSignedIn();
     }
 
     // Deals Collection Rules
     match /deals/{dealId} {
-      allow get: if isSignedIn() && isOwner(existing());
-      allow list: if isSignedIn() && existing().ownerId == request.auth.uid;
-      allow create: if isSignedIn() && isValidDeal(incoming());
-      allow update: if isSignedIn() && isValidDeal(incoming()) && isOwner(existing());
-      allow delete: if isSignedIn() && isOwner(existing());
+      allow read, write: if isSignedIn();
     }
 
     // Quotes Collection Rules
     match /quotes/{quoteId} {
-      allow get: if isSignedIn() && isOwner(existing());
-      allow list: if isSignedIn() && existing().ownerId == request.auth.uid;
-      allow create: if isSignedIn() && isValidQuote(incoming());
-      allow update: if isSignedIn() && isValidQuote(incoming()) && isOwner(existing());
-      allow delete: if isSignedIn() && isOwner(existing());
+      allow read, write: if isSignedIn();
     }
 
     // Docs Collection Rules
     match /docs/{docId} {
-      allow get: if isSignedIn() && isOwner(existing());
-      allow list: if isSignedIn() && existing().ownerId == request.auth.uid;
-      allow create: if isSignedIn() && isValidDoc(incoming());
-      allow update: if isSignedIn() && isValidDoc(incoming()) && isOwner(existing());
-      allow delete: if isSignedIn() && isOwner(existing());
+      allow read, write: if isSignedIn();
     }
 
     // Tasks Collection Rules
     match /tasks/{taskId} {
-      allow get: if isSignedIn() && isOwner(existing());
-      allow list: if isSignedIn() && existing().ownerId == request.auth.uid;
-      allow create: if isSignedIn() && isValidTask(incoming());
-      allow update: if isSignedIn() && isValidTask(incoming()) && isOwner(existing());
-      allow delete: if isSignedIn() && isOwner(existing());
+      allow read, write: if isSignedIn();
     }
 
     // Trash Collection Rules
     match /trash/{trashId} {
-      allow get: if isSignedIn() && isOwner(existing());
-      allow list: if isSignedIn() && existing().ownerId == request.auth.uid;
-      allow create: if isSignedIn() && isValidTrash(incoming());
-      allow update: if isSignedIn() && isValidTrash(incoming()) && isOwner(existing());
-      allow delete: if isSignedIn() && isOwner(existing());
+      allow read, write: if isSignedIn();
     }
   }
 }
