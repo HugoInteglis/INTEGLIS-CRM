@@ -4982,10 +4982,47 @@ checkAuth();
   window.hasPendingSave = false;
   // Override saveDB to sync to Firestore differentially
   window.saveDB = async function() {
-    if (originalSaveDB) originalSaveDB();
     if (window.clearActiveModalDraft) window.clearActiveModalDraft();
 
-    if (!auth.currentUser) return;
+    if (!auth.currentUser) {
+      if (originalSaveDB) originalSaveDB();
+      return;
+    }
+
+    // Assign ownerId and updatedAt locally before saving to localStorage and Firestore
+    const uid = auth.currentUser.uid;
+    for (const key of COLLECTIONS) {
+      const localList = window.db[key] || [];
+      const cacheList = window.firestoreCache[key] || [];
+
+      for (const item of localList) {
+        if (!item.id) continue;
+        item.ownerId = uid;
+
+        const cachedItem = cacheList.find(c => c.id === item.id);
+        if (!cachedItem) {
+          if (!item.updatedAt) {
+            item.updatedAt = Date.now();
+          }
+        } else {
+          const localClean = { ...item };
+          delete localClean.ownerId;
+          delete localClean.updatedAt;
+
+          const cachedClean = { ...cachedItem };
+          delete cachedClean.ownerId;
+          delete cachedClean.updatedAt;
+
+          if (JSON.stringify(localClean) !== JSON.stringify(cachedClean)) {
+            item.updatedAt = Date.now();
+          }
+        }
+      }
+    }
+
+    // Now save the updated local list with timestamps to localStorage
+    if (originalSaveDB) originalSaveDB();
+
     if (window.isSavingToFirebase) {
       window.hasPendingSave = true;
       console.log("Firebase sync in progress. Queued subsequent sync.");
@@ -4999,7 +5036,6 @@ checkAuth();
     if (syncDot) syncDot.style.backgroundColor = '#F5A623';
 
     try {
-      const uid = auth.currentUser.uid;
       for (const key of COLLECTIONS) {
         const localList = window.db[key] || [];
         const cacheList = window.firestoreCache[key] || [];
@@ -5008,13 +5044,10 @@ checkAuth();
         for (const item of localList) {
           if (!item.id) continue;
           
-          item.ownerId = uid; // Keep local state in sync with ownerId
           const cachedItem = cacheList.find(c => c.id === item.id);
-          
           const itemStr = JSON.stringify(item);
           let cachedStr = null;
           if (cachedItem) {
-            cachedItem.ownerId = uid; // Normalize cached item ownerId for accurate comparison
             cachedStr = JSON.stringify(cachedItem);
           }
 
@@ -5130,6 +5163,127 @@ checkAuth();
     });
   };
 
+  window.mergeFirestoreSnapshot = function() {
+    console.log("Running bidirectional/LWW Firestore merge...");
+    if (!auth.currentUser) return;
+
+    // 1. Gather all trash IDs to detect deleted items
+    const trashIds = new Set();
+    
+    // Check both local and firestore cache for deleted item IDs
+    const localTrash = window.db['trash'] || [];
+    const cacheTrash = window.firestoreCache['trash'] || [];
+    
+    localTrash.forEach(item => { if (item.id) trashIds.add(item.id); });
+    cacheTrash.forEach(item => { if (item.id) trashIds.add(item.id); });
+
+    // 2. Perform merge for each collection
+    let hasLocalChanges = false;
+
+    COLLECTIONS.forEach(key => {
+      if (key === 'trash') {
+        // For trash, we simply union them by ID
+        const mergedTrash = [];
+        const seenTrashIds = new Set();
+        
+        // Add cache trash
+        cacheTrash.forEach(item => {
+          if (item.id && !seenTrashIds.has(item.id)) {
+            mergedTrash.push(item);
+            seenTrashIds.add(item.id);
+          }
+        });
+        
+        // Add local trash
+        localTrash.forEach(item => {
+          if (item.id && !seenTrashIds.has(item.id)) {
+            mergedTrash.push(item);
+            seenTrashIds.add(item.id);
+            hasLocalChanges = true; // We have local trash that wasn't in cache
+          }
+        });
+
+        window.db['trash'] = mergedTrash;
+        return;
+      }
+
+      const localList = window.db[key] || [];
+      const cacheList = window.firestoreCache[key] || [];
+      const mergedList = [];
+      const seenIds = new Set();
+
+      // First, iterate over firestoreCache items (which are the cloud truth)
+      cacheList.forEach(item => {
+        if (!item.id) return;
+        
+        // If it was deleted, skip it!
+        if (trashIds.has(item.id)) {
+          return;
+        }
+
+        const localItem = localList.find(l => l.id === item.id);
+        if (localItem) {
+          const localTime = localItem.updatedAt || 0;
+          const cacheTime = item.updatedAt || 0;
+          
+          if (localTime > cacheTime) {
+            // Local version is newer, keep local version
+            mergedList.push(JSON.parse(JSON.stringify(localItem)));
+            hasLocalChanges = true;
+          } else {
+            // Firestore version is newer or equal, use Firestore version
+            mergedList.push(JSON.parse(JSON.stringify(item)));
+          }
+        } else {
+          // New item in Firestore, add it
+          mergedList.push(JSON.parse(JSON.stringify(item)));
+        }
+        seenIds.add(item.id);
+      });
+
+      // Secondly, find any items in local storage that aren't in firestoreCache yet
+      localList.forEach(item => {
+        if (!item.id) return;
+        
+        // If already seen, we resolved it using LWW above
+        if (seenIds.has(item.id)) {
+          return;
+        }
+
+        // If it was deleted, skip it
+        if (trashIds.has(item.id)) {
+          return;
+        }
+
+        // Check if the item's ID exists in the firestoreCache trash list (deleted on other client)
+        const deletedOnOther = cacheTrash.some(t => t.id === item.id);
+        if (deletedOnOther) {
+          return;
+        }
+
+        // This is a new local item that is not on Firestore yet. Keep it!
+        mergedList.push(JSON.parse(JSON.stringify(item)));
+        seenIds.add(item.id);
+        hasLocalChanges = true; // We kept a local item, which means Firestore doesn't have it yet!
+      });
+
+      window.db[key] = mergedList;
+    });
+
+    // Save of the merged list to localStorage
+    localStorage.setItem('integlis_crm4', JSON.stringify(window.db));
+
+    // If there were local items (or local trash/deletes) that didn't exist in Firestore, sync them up!
+    if (hasLocalChanges) {
+      console.log("Detected local CRM updates. Auto-uploading to Firebase Cloud...");
+      setTimeout(() => {
+        if (typeof window.saveDB === 'function') {
+          window.saveDB();
+        }
+      }, 500);
+    }
+  };
+
   // Manage Auth State Transitions
   onAuthStateChanged(auth, async (user) => {
     const syncText = document.getElementById('cloud-sync-text');
@@ -5162,10 +5316,7 @@ checkAuth();
               if (isFirestoreEmpty() && hasInitialLocalData()) {
                 bootstrapInitialLocalDataToCloud();
               } else {
-                COLLECTIONS.forEach(k => {
-                  window.db[k] = window.firestoreCache[k] || [];
-                });
-                localStorage.setItem('integlis_crm4', JSON.stringify(window.db));
+                window.mergeFirestoreSnapshot();
                 if (typeof window.renderAllViews === 'function') {
                   window.renderAllViews();
                 }
