@@ -4769,18 +4769,26 @@ checkAuth();
   };
 
   const app = initializeApp(firebaseConfig);
-  const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
+  const firestoreDB = getFirestore(app, firebaseConfig.firestoreDatabaseId);
   const auth = getAuth(app);
 
   // Connect and backup window.db immediately to prevent accidental wipes during initialization
-  if (window.db) {
+  if (window.db && typeof window.db.clients !== 'undefined') {
     window.initialLocalData = JSON.parse(JSON.stringify(window.db));
-  } else if (typeof db !== 'undefined') {
-    window.db = db;
-    window.initialLocalData = JSON.parse(JSON.stringify(db));
   } else {
-    window.db = { clients: [], deals: [], quotes: [], docs: [], tasks: [], trash: [] };
-    window.initialLocalData = { clients: [], deals: [], quotes: [], docs: [], tasks: [], trash: [] };
+    // Re-verify if there is a global CRM database we can recover
+    var globalDbPreset = null;
+    try {
+      var localS = localStorage.getItem('integlis_crm4');
+      if (localS) globalDbPreset = JSON.parse(localS);
+    } catch(e) {}
+    
+    if (globalDbPreset && globalDbPreset.clients) {
+      window.db = globalDbPreset;
+    } else {
+      window.db = { clients: [], deals: [], quotes: [], docs: [], tasks: [], trash: [] };
+    }
+    window.initialLocalData = JSON.parse(JSON.stringify(window.db));
   }
 
   const COLLECTIONS = ['clients', 'deals', 'quotes', 'docs', 'tasks', 'trash'];
@@ -4905,7 +4913,6 @@ checkAuth();
            (parsed.docs && parsed.docs.length > 0) ||
            (parsed.tasks && parsed.tasks.length > 0);
   }
-
   async function bootstrapInitialLocalDataToCloud() {
     console.log("Blank cloud project database detected. Syncing existing initial local client data...");
     const syncText = document.getElementById('cloud-sync-text');
@@ -4921,7 +4928,7 @@ checkAuth();
           const list = parsed[key] || [];
           for (const item of list) {
             if (!item.id) continue;
-            const docRef = doc(db, key, item.id);
+            const docRef = doc(firestoreDB, key, item.id);
             const cloned = { ...item, ownerId: auth.currentUser.uid };
             await setDoc(docRef, cloned);
           }
@@ -5000,7 +5007,7 @@ checkAuth();
           const cachedStr = cachedItem ? JSON.stringify(cachedItem) : null;
 
           if (!cachedItem || itemStr !== cachedStr) {
-            const docRef = doc(db, key, item.id);
+            const docRef = doc(firestoreDB, key, item.id);
             const clonedObj = JSON.parse(itemStr);
             clonedObj.ownerId = uid;
             try {
@@ -5016,7 +5023,7 @@ checkAuth();
           if (!cachedItem.id) continue;
           const localExists = localList.some(l => l.id === cachedItem.id);
           if (!localExists) {
-            const docRef = doc(db, key, cachedItem.id);
+            const docRef = doc(firestoreDB, key, cachedItem.id);
             try {
               await deleteDoc(docRef);
             } catch(e) {
@@ -5125,7 +5132,7 @@ checkAuth();
       }
 
       COLLECTIONS.forEach(key => {
-        const q = query(collection(db, key), where("ownerId", "==", user.uid));
+        const q = query(collection(firestoreDB, key), where("ownerId", "==", user.uid));
         const unsub = onSnapshot(q, (snapshot) => {
           const fetchedList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
           window.firestoreCache[key] = JSON.parse(JSON.stringify(fetchedList));
