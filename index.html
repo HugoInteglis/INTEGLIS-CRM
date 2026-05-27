@@ -514,8 +514,12 @@ textarea{resize:vertical;min-height:75px;line-height:1.5}
         <option value="Cliente Pasado">Cliente Pasado</option>
       </select>
     </div>
+    <div class="fin-tabs" style="margin-top:4px; margin-bottom:16px;">
+      <button class="ft active" id="btn-client-mode-people" onclick="setClientViewMode('people')">👤 Vista Contactos</button>
+      <button class="ft" id="btn-client-mode-companies" onclick="setClientViewMode('companies')">🏢 Vista Empresas / Corporativa</button>
+    </div>
     <div class="card card-table-scroll" style="padding:0;overflow:hidden">
-      <table class="tbl"><thead><tr><th>Cliente</th><th>Empresa</th><th>Teléfono</th><th>Estado</th><th>Próximo Cobro</th><th>Industria</th><th>Acciones</th></tr></thead>
+      <table class="tbl"><thead id="clients-header"><tr><th>Cliente</th><th>Empresa</th><th>Teléfono</th><th>Estado</th><th>Próximo Cobro</th><th>Industria</th><th>Acciones</th></tr></thead>
       <tbody id="clients-body"></tbody></table>
     </div>
   </div>
@@ -726,7 +730,7 @@ textarea{resize:vertical;min-height:75px;line-height:1.5}
     <div class="mh"><span class="mt2" id="m-client-title">Nuevo cliente</span><button class="cbtn" onclick="mClose('m-client')">&#10005;</button></div>
     <div class="mb2">
       <div class="fr">
-        <div class="fg"><label class="fl">Nombre *</label><input id="c-name" placeholder="María García"></div>
+        <div class="fg"><label class="fl">Contacto Principal *</label><input id="c-name" placeholder="María García"></div>
         <div class="fg"><label class="fl">Empresa *</label><input id="c-company" placeholder="Distribuidora XYZ"></div>
       </div>
       <div class="fr">
@@ -748,6 +752,19 @@ textarea{resize:vertical;min-height:75px;line-height:1.5}
       </div>
       <div class="fg"><label class="fl">Sitio web</label><input id="c-web" placeholder="https://empresa.com"></div>
       <div class="fg"><label class="fl">Notas</label><textarea id="c-notes" placeholder="Contexto relevante..."></textarea></div>
+      
+      <div style="border-top:1px dashed var(--br); margin-top:1.5rem; padding-top:1rem;">
+        <span style="font-weight:600; font-size:13.5px; color:var(--purple); display:flex; align-items:center; gap:6px; margin-bottom:0.75rem;">
+          <span>👥</span> Personas de Contacto Adicionales
+        </span>
+        <div id="modal-contacts-container" style="display:flex; flex-direction:column; gap:8px;">
+          <!-- Dynamically populated contacts rows -->
+        </div>
+        <button type="button" class="btn btn-ghost btn-sm" onclick="addModalContactRow()" style="margin-top:8px; font-size:12px; color:var(--purple); border:1px dashed var(--purple); width:100%; justify-content:center; display:flex; align-items:center; gap:4px; padding:6px; font-weight:500;">
+          <span>+</span> Agregar Persona de Contacto
+        </button>
+      </div>
+
       <input type="hidden" id="c-id">
     </div>
     <div class="mf">
@@ -1545,16 +1562,53 @@ function getClientBillingStatus(c) {
 window.getClientBillingStatus = getClientBillingStatus;
 
 function renderClients() {
+  var mode = window.clientViewMode || 'people';
+  
+  // Set table header depending on mode
+  var headerEl = document.getElementById('clients-header');
+  if (headerEl) {
+    if (mode === 'companies') {
+      headerEl.innerHTML = '<tr><th>Empresa</th><th>Contacto Principal</th><th>Otros Contactos</th><th>Estado</th><th>Próximo Cobro</th><th>Industria</th><th>Acciones</th></tr>';
+    } else {
+      headerEl.innerHTML = '<tr><th>Cliente</th><th>Empresa</th><th>Teléfono</th><th>Estado</th><th>Próximo Cobro</th><th>Industria</th><th>Acciones</th></tr>';
+    }
+  }
+
+  // Update tabs highlight
+  var btnPeople = document.getElementById('btn-client-mode-people');
+  var btnCompanies = document.getElementById('btn-client-mode-companies');
+  if (btnPeople && btnCompanies) {
+    if (mode === 'people') {
+      btnPeople.classList.add('active');
+      btnCompanies.classList.remove('active');
+    } else {
+      btnCompanies.classList.add('active');
+      btnPeople.classList.remove('active');
+    }
+  }
+
   var q = (document.getElementById('c-search').value || '').toLowerCase();
   var sf = (document.getElementById('c-filter').value || '').toLowerCase().trim();
+  
+  // Custom filter check including extra contacts search
   var list = db.clients.filter(function(c) {
     var m = c.name.toLowerCase().indexOf(q) >= 0 || c.company.toLowerCase().indexOf(q) >= 0 || (c.email||'').toLowerCase().indexOf(q) >= 0;
     
+    // Also search in extra contacts list
+    if (!m && c.contacts && c.contacts.length) {
+      for (var k = 0; k < c.contacts.length; k++) {
+        var con = c.contacts[k];
+        if (con.name.toLowerCase().indexOf(q) >= 0 || (con.email||'').toLowerCase().indexOf(q) >= 0 || (con.role||'').toLowerCase().indexOf(q) >= 0 || (con.phone||'').toLowerCase().indexOf(q) >= 0) {
+          m = true;
+          break;
+        }
+      }
+    }
+
     var matchesSf = true;
     if (sf) {
       var cStatusResolved = (c.status || '').toLowerCase().trim();
       var filterVal = sf.toLowerCase();
-      // exact or soft status match, including legacy mappings
       if (cStatusResolved === filterVal) {
         matchesSf = true;
       } else if (filterVal === 'cliente activo' && cStatusResolved === 'activo') {
@@ -1569,6 +1623,7 @@ function renderClients() {
     }
     return m && matchesSf;
   });
+  
   document.getElementById('client-count').textContent = '(' + list.length + ')';
   var html = '';
   if (!list.length) {
@@ -1598,19 +1653,52 @@ function renderClients() {
           + '</div>';
       }
 
-      html += '<tr>'
-        + '<td><div class="nc"><div class="av" style="background:' + ac(c.name) + '20;color:' + ac(c.name) + '">' + ini(c.name) + '</div>'
-        + '<div><div style="font-weight:500;cursor:pointer;color:var(--purple)" onclick="openDetail(\'' + c.id + '\')">' + c.name + '</div>'
-        + '<div style="font-size:11px;color:var(--tx2)">' + (c.email||'—') + '</div></div></div></td>'
-        + '<td>' + c.company + '</td><td>' + (c.phone||'—') + '</td>'
-        + '<td><span class="badge ' + bClass + '">' + c.status + '</span></td>'
-        + '<td>' + billingBadge + '</td>'
-        + '<td>' + (c.industry||'—') + '</td>'
-        + '<td style="white-space:nowrap;display:flex;gap:5px">'
-        + '<button class="bi btn-sm" onclick="openDetail(\'' + c.id + '\')">&#128065;</button>'
-        + '<button class="bi btn-sm" onclick="openClientModal(\'' + c.id + '\')">&#9998;</button>'
-        + '<button class="bi btn-sm" style="color:#e24b4a" onclick="deleteClient(\'' + c.id + '\')">&#128465;</button>'
-        + '</td></tr>';
+      if (mode === 'companies') {
+        var othersHtml = '';
+        if (c.contacts && c.contacts.length) {
+          othersHtml = '<div style="display:flex; flex-direction:column; gap:4px; max-width:240px; font-size:12px;">';
+          for (var k = 0; k < c.contacts.length; k++) {
+            var con = c.contacts[k];
+            var roleBadge = con.role ? ' <span style="font-size:9.5px; background:rgba(124,111,224,0.08); padding:1px 5px; border-radius:3px; color:var(--purple); font-weight:500;">' + con.role + '</span>' : '';
+            othersHtml += '<div style="line-height:1.2; border-bottom:1px solid rgba(124,111,224,0.04); padding-bottom:3px; margin-bottom:2px;">'
+              + '<span style="font-weight:600; color:var(--tx);">' + con.name + '</span>' + roleBadge
+              + (con.email || con.phone ? '<div style="font-size:10.5px; color:var(--tx2); margin-top:2px;">' + (con.email||'') + (con.email && con.phone ? ' · ' : '') + (con.phone||'') + '</div>' : '')
+              + '</div>';
+          }
+          othersHtml += '</div>';
+        } else {
+          othersHtml = '<span style="color:var(--tx3); font-style:italic; font-size:12px;">Solo principal</span>';
+        }
+
+        html += '<tr>'
+          + '<td><div class="nc"><div class="av" style="border-radius:6px; background:' + ac(c.company) + '20; color:' + ac(c.company) + '">🏢</div>'
+          + '<div><div style="font-weight:600; cursor:pointer; color:var(--purple)" onclick="openDetail(\'' + c.id + '\')">' + c.company + '</div>'
+          + '<div style="font-size:11px; color:var(--tx2)">' + (c.web||'—') + '</div></div></div></td>'
+          + '<td><div style="font-weight:500">' + c.name + '</div><div style="font-size:11px; color:var(--tx2)">' + (c.email||'—') + ' · ' + (c.phone||'—') + '</div></td>'
+          + '<td>' + othersHtml + '</td>'
+          + '<td><span class="badge ' + bClass + '">' + c.status + '</span></td>'
+          + '<td>' + billingBadge + '</td>'
+          + '<td>' + (c.industry||'—') + '</td>'
+          + '<td style="white-space:nowrap; display:flex; gap:5px">'
+          + '<button class="bi btn-sm" onclick="openDetail(\'' + c.id + '\')">&#128065;</button>'
+          + '<button class="bi btn-sm" onclick="openClientModal(\'' + c.id + '\')">&#9998;</button>'
+          + '<button class="bi btn-sm" style="color:#e24b4a" onclick="deleteClient(\'' + c.id + '\')">&#128465;</button>'
+          + '</td></tr>';
+      } else {
+        html += '<tr>'
+          + '<td><div class="nc"><div class="av" style="background:' + ac(c.name) + '20;color:' + ac(c.name) + '">' + ini(c.name) + '</div>'
+          + '<div><div style="font-weight:500;cursor:pointer;color:var(--purple)" onclick="openDetail(\'' + c.id + '\')">' + c.name + '</div>'
+          + '<div style="font-size:11px;color:var(--tx2)">' + (c.email||'—') + '</div></div></div></td>'
+          + '<td>' + c.company + '</td><td>' + (c.phone||'—') + '</td>'
+          + '<td><span class="badge ' + bClass + '">' + c.status + '</span></td>'
+          + '<td>' + billingBadge + '</td>'
+          + '<td>' + (c.industry||'—') + '</td>'
+          + '<td style="white-space:nowrap;display:flex;gap:5px">'
+          + '<button class="bi btn-sm" onclick="openDetail(\'' + c.id + '\')">&#128065;</button>'
+          + '<button class="bi btn-sm" onclick="openClientModal(\'' + c.id + '\')">&#9998;</button>'
+          + '<button class="bi btn-sm" style="color:#e24b4a" onclick="deleteClient(\'' + c.id + '\')">&#128465;</button>'
+          + '</td></tr>';
+      }
     }
   }
   document.getElementById('clients-body').innerHTML = html;
@@ -1775,6 +1863,31 @@ function openDetail(id) {
     srvsHtml = '<div style="color:var(--tx2);font-size:13px;padding:2rem 0;text-align:center">Este cliente no tiene servicios contratados o activos registrados aún.</div>';
   }
 
+  var extraContactsHtml = '';
+  if (c.contacts && c.contacts.length) {
+    extraContactsHtml = '<div style="margin-top:16px; border-top:1px dashed var(--br); padding-top:12px;">'
+      + '<span style="font-weight:600; font-size:12.5px; color:var(--purple); display:block; margin-bottom:8px;">👥 Otras personas de contacto (' + c.contacts.length + '):</span>'
+      + '<div style="display:flex; flex-direction:column; gap:8px;">';
+    c.contacts.forEach(function(con) {
+      var initials = con.name ? con.name.split(' ').map(function(w){return w[0];}).join('').substring(0,2).toUpperCase() : '👤';
+      extraContactsHtml += '<div style="display:flex; align-items:flex-start; gap:10px; background:var(--sur2); border-radius:6px; padding:8px 10px; border:1px solid var(--br2);">'
+        + '<div class="av" style="font-size:10px; width:26px; height:26px; min-width:26px; background:' + ac(con.name) + '25; color:' + ac(con.name) + '; font-weight:600; border-radius:50%; display:flex; align-items:center; justify-content:center;">' + initials + '</div>'
+        + '<div style="flex:1; min-width:0;">'
+        + '  <div style="font-size:12.5px; font-weight:600; display:flex; flex-wrap:wrap; align-items:center; gap:6px; color:var(--tx);">' + con.name 
+        + '    ' + (con.role ? '<span style="font-size:10px; background:rgba(124,111,224,0.1); color:var(--purple); padding:1px 6px; border-radius:10px; font-weight:500;">' + con.role + '</span>' : '') + '</div>'
+        + '  <div style="font-size:11.5px; color:var(--tx2); margin-top:2px;">'
+        + (con.email ? '✉️ <a href="mailto:' + con.email + '" style="color:var(--tx2) !important;">' + con.email + '</a>' : '')
+        + (con.email && con.phone ? ' · ' : '')
+        + (con.phone ? '📞 ' + con.phone : '')
+        + '  </div>'
+        + '</div>'
+        + '</div>';
+    });
+    extraContactsHtml += '</div></div>';
+  } else {
+    extraContactsHtml = '<div style="margin-top:14px; border-top:1px dashed var(--br); padding-top:12px; color:var(--tx3); font-size:12px; font-style:italic;">No hay personas de contacto adicionales registradas.</div>';
+  }
+
   document.getElementById('detail-body').innerHTML =
     '<div class="grid-2col" style="margin-bottom:1rem">'
     + '<div class="card"><div class="ct">Información de contacto</div>'
@@ -1790,6 +1903,7 @@ function openDetail(id) {
     + (c.web ? '<tr><td style="color:var(--tx2);padding:5px 0">Web</td><td><a href="' + c.web + '" target="_blank">' + c.web + '</a></td></tr>' : '')
     + '</table>'
     + (c.notes ? '<div style="margin-top:12px;padding:10px;background:var(--sur2);border-radius:8px;font-size:13px;color:var(--tx2);border-left:3px solid var(--purple)">' + c.notes + '</div>' : '')
+    + extraContactsHtml
     + '</div>'
     + '<div class="card" style="overflow-x:auto;-webkit-overflow-scrolling:touch;"><div class="ct">Oportunidades (' + deals.length + ') <button class="btn btn-ghost btn-sm" onclick="openDealModal(null,null,\'' + id + '\')">+</button></div>' + dealsHtml + '</div>'
     + '</div>'
@@ -1808,6 +1922,50 @@ function closeDetail() {
   document.getElementById('clientDetail').classList.remove('open');
   document.getElementById('clientsList').style.display = 'block';
   currentClient = null;
+}
+
+// CLIENT CONTACTS EXTRA DATA HELPERS
+function addModalContactRow(contact) {
+  var container = document.getElementById('modal-contacts-container');
+  if (!container) return;
+  
+  var rowId = 'mc-row-' + uid();
+  var nameVal = contact ? (contact.name || '') : '';
+  var emailVal = contact ? (contact.email || '') : '';
+  var phoneVal = contact ? (contact.phone || '') : '';
+  var roleVal = contact ? (contact.role || '') : '';
+  var cid = contact ? (contact.id || '') : '';
+  
+  var div = document.createElement('div');
+  div.className = 'modal-contact-row';
+  div.id = rowId;
+  div.dataset.id = cid;
+  div.style.padding = '12px';
+  div.style.background = 'var(--bg)';
+  div.style.border = '1px solid var(--br)';
+  div.style.borderRadius = '8px';
+  div.style.position = 'relative';
+  div.style.marginBottom = '8px';
+  
+  div.innerHTML = 
+    '<button type="button" class="bi btn-xsAll" onclick="deleteModalContactRow(\'' + rowId + '\')" style="position:absolute; top:8px; right:8px; color:#e24b4a; border: 1px solid rgba(226,75,74,0.15); background:rgba(226,75,74,0.03); padding:4px 6px; font-size:10px; border-radius:4px; cursor:pointer;" title="Eliminar este contacto">&#10005;</button>'
+    + '<div class="fr" style="margin-bottom:6px; padding-right:24px; gap:8px;">'
+    + '  <div class="fg" style="margin:0;"><label class="fl" style="font-size:11px; margin-bottom:2px;">Nombre de la persona</label><input class="mc-name" value="' + nameVal.replace(/"/g, '&quot;') + '" placeholder="Ej. Carlos Ruiz" style="padding:4px 8px; font-size:12px; height:28px; background:var(--sur); border:1px solid var(--br2); border-radius:4px; width:100%;"></div>'
+    + '  <div class="fg" style="margin:0;"><label class="fl" style="font-size:11px; margin-bottom:2px;">Cargo / Puesto / Rol</label><input class="mc-role" value="' + roleVal.replace(/"/g, '&quot;') + '" placeholder="Ej. Gerente de Ventas" style="padding:4px 8px; font-size:12px; height:28px; background:var(--sur); border:1px solid var(--br2); border-radius:4px; width:100%;"></div>'
+    + '</div>'
+    + '<div class="fr" style="margin:0; gap:8px;">'
+    + '  <div class="fg" style="margin:0;"><label class="fl" style="font-size:11px; margin-bottom:2px;">Email</label><input class="mc-email" type="email" value="' + emailVal.replace(/"/g, '&quot;') + '" placeholder="carlos@empresa.com" style="padding:4px 8px; font-size:12px; height:28px; background:var(--sur); border:1px solid var(--br2); border-radius:4px; width:100%;"></div>'
+    + '  <div class="fg" style="margin:0;"><label class="fl" style="font-size:11px; margin-bottom:2px;">Teléfono</label><input class="mc-phone" value="' + phoneVal.replace(/"/g, '&quot;') + '" placeholder="+502 9876 5432" style="padding:4px 8px; font-size:12px; height:28px; background:var(--sur); border:1px solid var(--br2); border-radius:4px; width:100%;"></div>'
+    + '</div>';
+    
+  container.appendChild(div);
+}
+
+function deleteModalContactRow(rowId) {
+  var row = document.getElementById(rowId);
+  if (row) {
+    row.parentNode.removeChild(row);
+  }
 }
 
 // CLIENT MODAL
@@ -1833,6 +1991,18 @@ function openClientModal(id) {
   }
   document.getElementById('c-status').value = currentStatus;
   document.getElementById('c-id').value = c ? c.id : '';
+
+  // Clear and populate contacts
+  var container = document.getElementById('modal-contacts-container');
+  if (container) {
+    container.innerHTML = '';
+    if (c && c.contacts && c.contacts.length) {
+      c.contacts.forEach(function(con) {
+        addModalContactRow(con);
+      });
+    }
+  }
+
   mOpen('m-client');
 }
 function saveClient() {
@@ -1840,6 +2010,27 @@ function saveClient() {
   var company = document.getElementById('c-company').value.trim();
   if (!name || !company) { alert('Nombre y empresa son obligatorios'); return; }
   var id = document.getElementById('c-id').value;
+
+  // Retrieve contacts list from modal form
+  var contacts = [];
+  var contactRows = document.querySelectorAll('.modal-contact-row');
+  contactRows.forEach(function(row) {
+    var nameInput = row.querySelector('.mc-name');
+    var roleInput = row.querySelector('.mc-role');
+    var emailInput = row.querySelector('.mc-email');
+    var phoneInput = row.querySelector('.mc-phone');
+    var cName = nameInput ? nameInput.value.trim() : '';
+    if (cName) {
+      contacts.push({
+        id: row.dataset.id || uid(),
+        name: cName,
+        role: roleInput ? roleInput.value.trim() : '',
+        email: emailInput ? emailInput.value.trim() : '',
+        phone: phoneInput ? phoneInput.value.trim() : ''
+      });
+    }
+  });
+
   var data = {name:name, company:company,
     email:document.getElementById('c-email').value.trim(),
     phone:document.getElementById('c-phone').value.trim(),
@@ -1847,7 +2038,8 @@ function saveClient() {
     web:document.getElementById('c-web').value.trim(),
     notes:document.getElementById('c-notes').value.trim(),
     status:document.getElementById('c-status').value,
-    createdAt:new Date().toISOString()};
+    createdAt:new Date().toISOString(),
+    contacts:contacts};
   if (id) {
     for (var i = 0; i < db.clients.length; i++) { if (db.clients[i].id === id) { Object.assign(db.clients[i], data); break; } }
   } else { data.id = uid(); db.clients.push(data); }
@@ -1898,6 +2090,13 @@ function deleteClient(id) {
       if (clientsList) clientsList.style.display = 'block';
     }
   });
+}
+
+window.clientViewMode = localStorage.getItem('company_crm_client_view_mode') || 'people';
+function setClientViewMode(mode) {
+  window.clientViewMode = mode;
+  localStorage.setItem('company_crm_client_view_mode', mode);
+  renderClients();
 }
 
 // QUICK CLIENT (from deal modal)
@@ -2002,7 +2201,7 @@ function saveDeal() {
   var generatedId = id || uid();
   var data = {title:title, clientId:clientId, clientName:clientName,
     stage:document.getElementById('d-stage').value,
-    value:document.getElementById('d-value').value,
+    value:parseFloat(document.getElementById('d-value').value) || 0,
     closeDate:document.getElementById('d-close').value,
     interest:document.getElementById('d-interest').value,
     notes:document.getElementById('d-notes').value.trim(),
@@ -2943,7 +3142,7 @@ function saveDoc() {
   var data = {name:name,
     type:document.getElementById('doc-type').value,
     clientId:document.getElementById('doc-client').value,
-    amount:document.getElementById('doc-amount').value,
+    amount:parseFloat(document.getElementById('doc-amount').value) || 0,
     date:document.getElementById('doc-date').value,
     status:document.getElementById('doc-status').value,
     notes:document.getElementById('doc-notes').value.trim(),
@@ -4303,6 +4502,9 @@ window.permanentlyDeleteTrashItem = permanentlyDeleteTrashItem;
 window.emptyCurrentTrashTab = emptyCurrentTrashTab;
 window.getClientName = getClientName;
 window.renderAllViews = renderAllViews;
+window.addModalContactRow = addModalContactRow;
+window.deleteModalContactRow = deleteModalContactRow;
+window.setClientViewMode = setClientViewMode;
 
 window.handleLogin = handleLogin;
 window.logout = logout;
