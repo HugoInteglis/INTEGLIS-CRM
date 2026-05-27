@@ -202,6 +202,146 @@ textarea{resize:vertical;min-height:75px;line-height:1.5}
 .login-btn{background:var(--purple);color:#fff;width:100%;padding:11px;font-weight:500;font-size:14px;border:none;border-radius:var(--r);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;transition:all .15s}
 .login-btn:hover{background:#6a5ecf}
 .login-err{background:rgba(226,75,74,.12);border:1px solid #e24b4a;color:#fba3a2;border-radius:8px;padding:10px 12px;font-size:12px;margin-bottom:1.25rem;display:none;line-height:1.4}
+
+/* Kanban Board & Interactive Tasks CSS */
+.kanban-board {
+  display: flex;
+  gap: 16px;
+  overflow-x: auto;
+  padding-bottom: 20px;
+  -webkit-overflow-scrolling: touch;
+  align-items: flex-start;
+}
+.kanban-column {
+  flex: 1;
+  min-width: 280px;
+  max-width: 385px;
+  background: var(--sur);
+  border: 1px solid var(--br);
+  border-radius: 12px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 5px rgba(0,0,0,0.02);
+}
+.kanban-column.drag-over {
+  background: rgba(124, 111, 224, 0.05);
+  border-color: var(--purple);
+  box-shadow: 0 0 0 3px rgba(124, 111, 224, 0.15);
+  transform: scale(1.01);
+}
+.kanban-column-header {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--tx);
+  padding: 2px 2px 10px;
+  border-bottom: 1.5px solid var(--br);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.kanban-column-count {
+  font-size: 11px;
+  background: var(--sur2);
+  border: 1px solid var(--br);
+  color: var(--tx2);
+  border-radius: 10px;
+  padding: 2px 7px;
+  font-weight: 500;
+}
+.kanban-cards-container {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 150px;
+  border-radius: 8px;
+}
+.kanban-card {
+  background: var(--bg);
+  border: 1px solid var(--br);
+  border-radius: 10px;
+  padding: 14px;
+  cursor: grab;
+  user-select: none;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  position: relative;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.01);
+}
+.kanban-card:active {
+  cursor: grabbing;
+}
+.kanban-card.dragging {
+  opacity: 0.35;
+  border: 1.5px dashed var(--purple);
+  transform: rotate(1deg);
+}
+.kanban-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+  border-color: var(--br2);
+}
+.kanban-card-top {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+.kanban-card-title {
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.4;
+  color: var(--tx);
+  flex: 1;
+}
+.kanban-card-title.done {
+  text-decoration: line-through;
+  color: var(--tx3);
+}
+.kanban-card-meta {
+  font-size: 11.5px;
+  color: var(--tx2);
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-top: 2px;
+}
+.kanban-card-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-top: 1px solid var(--br);
+  padding-top: 8px;
+  margin-top: 4px;
+}
+.quick-badge {
+  padding: 2px 6px;
+  border-radius: 6px;
+  font-size: 10.5px;
+  font-weight: 500;
+}
+
+/* Animations & Confetti */
+@keyframes pulse-subtle {
+  0%, 100% { opacity: 0.8; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.15); }
+}
+@keyframes confetti-pop {
+  0% { transform: translate(0, 0) scale(0.5) rotate(0deg); opacity: 1; }
+  100% { transform: translate(var(--x), var(--y)) scale(1) rotate(var(--r)); opacity: 0; }
+}
+.confetti-particle {
+  position: absolute;
+  width: 7px;
+  height: 7px;
+  pointer-events: none;
+  border-radius: 1px;
+  animation: confetti-pop 0.75s cubic-bezier(0.1, 0.8, 0.3, 1) forwards;
+  z-index: 10000;
+}
 </style>
 </head>
 <body>
@@ -407,30 +547,93 @@ textarea{resize:vertical;min-height:75px;line-height:1.5}
 
 <!-- TASKS -->
 <div class="view" id="view-tasks">
-  <div class="ph">
-    <div class="pt">Tareas</div>
-    <div style="display:flex;gap:8px;align-items:center;">
-      <select id="task-filter" onchange="renderTasks()" style="width:auto;margin:0;">
+  <div class="ph" style="flex-wrap: wrap; gap: 12px;">
+    <div style="display:flex; flex-direction:column; gap:4px;">
+      <div class="pt">Tareas de Integlis</div>
+      <div style="font-size:11.5px; color:var(--tx2);">Gestiona, filtra y arrastra tus actividades en tiempo real.</div>
+    </div>
+    <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-left:auto;">
+      <!-- Toggle segmented control -->
+      <div style="display:flex; gap: 3px; border: 1px solid var(--br); background: var(--sur2); border-radius: 8px; padding: 3px; align-items:center;">
+        <button type="button" class="ft-btn ft-active" id="btn-task-mode-list" onclick="setTaskViewMode('list')" style="font-size:11.5px; font-weight:600; padding:6px 12px; border:none; background:var(--bg); color:var(--purple); border-radius:6px; box-shadow:0 1px 3px rgba(0,0,0,0.1); cursor:pointer; display:inline-flex; align-items:center; gap:4px; transition: all 0.2s;">📋 Lista</button>
+        <button type="button" class="ft-btn" id="btn-task-mode-board" onclick="setTaskViewMode('board')" style="font-size:11.5px; font-weight:500; padding:6px 12px; border:none; background:transparent; color:var(--tx2); border-radius:6px; cursor:pointer; display:inline-flex; align-items:center; gap:4px; transition: all 0.2s;">📊 Tablero (Kanban)</button>
+      </div>
+      
+      <button class="btn btn-ghost btn-sm" onclick="openTrashModal('task')" style="color:var(--tx2); border:1px solid var(--br2); height:35px; display:inline-flex; align-items:center; justify-content:center; padding:0 12px; font-size:12.5px;"><i style="font-style:normal;margin-right:4px;">🗑️</i> Eliminados</button>
+      <button class="btn btn-primary" onclick="openTaskModal(null,null)" style="height:35px; font-size:12.5px; display:inline-flex; align-items:center; justify-content:center;">+ Nueva tarea</button>
+    </div>
+  </div>
+
+  <!-- Search & Filters Panel -->
+  <div class="card" style="margin-bottom:1rem; padding: 12px 16px; border-color: rgba(124,111,224,0.12); display: flex; flex-wrap: wrap; gap: 10px; align-items: center; background: rgba(124,111,224,0.015);">
+    <div style="flex:1; min-width:220px; display:flex; align-items:center; background:var(--bg); border:1px solid var(--br); border-radius:8px; padding:0 10px; height:36px;">
+      <span style="font-size:13px; margin-right:6px; opacity:0.65;">🔍</span>
+      <input id="task-search" placeholder="Buscar por título, notas, categoría..." style="border:none; background:transparent; font-size:13px; color:var(--tx); width:100%; outline:none;" oninput="renderTasks()">
+    </div>
+    
+    <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+      <select id="task-filter" onchange="renderTasks()" style="width:130px; margin:0; font-size:12.5px; height:36px; background:var(--bg);">
         <option value="pending">Pendientes</option>
         <option value="all">Todas</option>
         <option value="done">Completadas</option>
       </select>
-      <button class="btn btn-ghost btn-sm" onclick="openTrashModal('task')" style="color:var(--tx2); border:1px solid var(--br2); height:38px; display:inline-flex; align-items:center; justify-content:center;"><i style="font-style:normal;margin-right:4px;">🗑️</i> Eliminados</button>
-      <button class="btn btn-primary" onclick="openTaskModal(null,null)">+ Nueva tarea</button>
+      <select id="task-prio-filter" onchange="renderTasks()" style="width:130px; margin:0; font-size:12.5px; height:36px; background:var(--bg);">
+        <option value="all">Prioridad (Cualquiera)</option>
+        <option value="alta">Prioridad Alta</option>
+        <option value="media">Prioridad Media</option>
+        <option value="baja">Prioridad Baja</option>
+      </select>
+      <select id="task-client-filter" onchange="renderTasks()" style="width:170px; margin:0; font-size:12.5px; height:36px; background:var(--bg);">
+        <option value="">Cliente (Todos)</option>
+      </select>
     </div>
   </div>
-  <div class="card" style="margin-bottom:1rem">
+
+  <!-- Progress Card -->
+  <div class="card" style="margin-bottom:1rem; padding: 12px 16px; border-radius:12px;">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-      <span style="font-size:13px;font-weight:500">Progreso</span>
-      <span id="task-progress-label" style="font-size:12px;color:var(--tx2)"></span>
+      <span style="font-size:13px;font-weight:600; display:flex; align-items:center; gap:6px; color: var(--tx);">📈 Progreso de Tareas</span>
+      <span id="task-progress-label" style="font-size:12px;color:var(--tx2);font-weight:550;"></span>
     </div>
-    <div class="progress-bar"><div class="progress-fill" id="task-progress-bar" style="background:var(--teal)"></div></div>
+    <div class="progress-bar" style="background:var(--sur2);"><div class="progress-fill" id="task-progress-bar" style="background:var(--teal)"></div></div>
   </div>
-  <div id="tasks-overdue" style="margin-bottom:1rem"></div>
-  <div id="tasks-today" style="margin-bottom:1rem"></div>
-  <div id="tasks-upcoming" style="margin-bottom:1rem"></div>
-  <div id="tasks-no-date" style="margin-bottom:1rem"></div>
-  <div id="tasks-done-section" style="margin-bottom:1rem"></div>
+
+  <!-- Inline Quick Add Task bar -->
+  <div class="card" style="margin-bottom:1.25rem; padding: 12px; border: 1.5px dashed rgba(124,111,224,0.3); background: rgba(124,111,224,0.02); border-radius: 12px;">
+    <form onsubmit="event.preventDefault(); window.quickAddTaskObj();" style="display:flex; gap:10px; align-items:center; width:100%; flex-wrap:wrap;">
+      <div style="flex:1; min-width: 250px; display:flex; align-items:center; gap:8px;">
+        <span style="font-size:14px; animation: pulse-subtle 2s infinite; cursor:default;" title="Agregar tarea rápidamente">⚡</span>
+        <input id="quick-task-title" placeholder="Escribe una tarea rápida (ej. Llamar a Laura para seguimiento) y presiona Enter..." style="flex:1; border:none; background:transparent; font-size:13px; padding:4px 0; outline:none; color:var(--tx);" autocomplete="off">
+      </div>
+      <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+        <select id="quick-task-priority" style="width:115px; margin:0; font-size:12px; border:1px solid var(--br); border-radius:6px; padding:4px 8px; height:32px; background:var(--bg);">
+          <option value="baja">Prioridad Baja</option>
+          <option value="media" selected>Prioridad Media</option>
+          <option value="alta">Prioridad Alta</option>
+        </select>
+        <select id="quick-task-client" style="width:150px; margin:0; font-size:12px; border:1px solid var(--br); border-radius:6px; padding:4px 8px; height:32px; background:var(--bg);">
+          <option value="">— Sin cliente —</option>
+        </select>
+        <button type="submit" class="btn btn-primary btn-sm" style="font-size:12px; height:32px; font-weight:600; padding:0 14px; display:inline-flex; align-items:center; justify-content:center; border-radius:6px;">Agregar</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- List container -->
+  <div id="tasks-list-container">
+    <div id="tasks-overdue" style="margin-bottom:1rem"></div>
+    <div id="tasks-today" style="margin-bottom:1rem"></div>
+    <div id="tasks-upcoming" style="margin-bottom:1rem"></div>
+    <div id="tasks-no-date" style="margin-bottom:1rem"></div>
+    <div id="tasks-done-section" style="margin-bottom:1rem"></div>
+  </div>
+
+  <!-- Board container (Kanban) -->
+  <div id="tasks-board-container" style="display:none; transition: all 0.3s ease;">
+    <div class="kanban-board" id="kanban-board-element">
+      <!-- Generated dynamically in renderTasks() in board view mode -->
+    </div>
+  </div>
 </div>
 
 <!-- ANALYTICS -->
@@ -2796,7 +2999,7 @@ function taskRow(t, compact) {
 
   return '<div class="task-item">'
     + '<div class="prio-dot" style="background:' + (PRIO_COLOR[t.priority]||'#888') + '"></div>'
-    + '<div class="task-cb ' + (t.done?'done':'') + '" onclick="toggleTask(\'' + t.id + '\')">' + (t.done?'&#10003;':'') + '</div>'
+    + '<div class="task-cb ' + (t.done?'done':'') + '" onclick="toggleTask(\'' + t.id + '\', event)">' + (t.done?'&#10003;':'') + '</div>'
     + '<div class="task-body">'
     + '<div class="task-title ' + (t.done?'done':'') + '">' + t.title + '</div>'
     + '<div class="task-meta">'
@@ -2811,44 +3014,399 @@ function taskRow(t, compact) {
     + '</div>'
     + '</div>';
 }
+
+/* INTERACTIVE TASKS CONTROLLERS */
+window.taskViewMode = localStorage.getItem('task_view_mode') || 'list';
+
+function setTaskViewMode(mode) {
+  window.taskViewMode = mode;
+  localStorage.setItem('task_view_mode', mode);
+  renderTasks();
+}
+
+function populateTaskFilters() {
+  var clientSelect = document.getElementById('task-client-filter');
+  var quickClientSelect = document.getElementById('quick-task-client');
+  if (!clientSelect) return;
+  
+  var prevVal = clientSelect.value;
+  var prevQuickVal = quickClientSelect ? quickClientSelect.value : '';
+  
+  clientSelect.innerHTML = '<option value="">Cliente (Todos)</option>';
+  if (quickClientSelect) {
+    quickClientSelect.innerHTML = '<option value="">— Relacionar cliente —</option>';
+  }
+  
+  if (db && db.clients) {
+    db.clients.forEach(function(c) {
+      var opt = document.createElement('option');
+      opt.value = c.id;
+      opt.textContent = c.name + ' (' + c.company + ')';
+      clientSelect.appendChild(opt);
+      
+      if (quickClientSelect) {
+        var optQuick = document.createElement('option');
+        optQuick.value = c.id;
+        optQuick.textContent = c.name;
+        quickClientSelect.appendChild(optQuick);
+      }
+    });
+  }
+  
+  clientSelect.value = prevVal;
+  if (quickClientSelect) {
+    quickClientSelect.value = prevQuickVal;
+  }
+}
+
+function quickAddTaskObj() {
+  var titleEl = document.getElementById('quick-task-title');
+  if (!titleEl) return;
+  var title = titleEl.value.trim();
+  if (!title) return;
+  
+  var priority = document.getElementById('quick-task-priority').value || 'media';
+  var clientId = document.getElementById('quick-task-client').value || '';
+  
+  var newTask = {
+    id: uid(),
+    title: title,
+    priority: priority,
+    clientId: clientId,
+    due: todayStr(), // Defaults to today so it is instantly prioritizable/actionable
+    category: 'seguimiento',
+    done: false,
+    notes: '',
+    createdAt: new Date().toISOString()
+  };
+  
+  if (!db.tasks) db.tasks = [];
+  db.tasks.push(newTask);
+  saveDB();
+  
+  titleEl.value = '';
+  document.getElementById('quick-task-priority').value = 'media';
+  document.getElementById('quick-task-client').value = '';
+  
+  renderTasks();
+  renderDash();
+  updatePendingBadge();
+  
+  var isDetailOpen = document.getElementById('clientDetail') && document.getElementById('clientDetail').classList.contains('open');
+  if (isDetailOpen && currentClient) openDetail(currentClient);
+}
+
+// Particle-based Confetti celebration generator
+function spawnConfetti(x, y) {
+  var colors = ['#7C6FE0', '#0FB8A0', '#F5A623', '#e24b4a', '#378ADD', '#E5A4FF'];
+  var numParticles = 24;
+  for (var i = 0; i < numParticles; i++) {
+    var p = document.createElement('div');
+    p.className = 'confetti-particle';
+    p.style.left = (x || (window.innerWidth / 2)) + 'px';
+    p.style.top = (y || (window.innerHeight / 2)) + 'px';
+    p.style.background = colors[Math.floor(Math.random() * colors.length)];
+    
+    var angle = Math.random() * Math.PI * 2;
+    var distance = 30 + Math.random() * 80;
+    var dx = Math.cos(angle) * distance;
+    var dy = Math.sin(angle) * distance;
+    var rotation = Math.random() * 360;
+    
+    p.style.setProperty('--x', dx + 'px');
+    p.style.setProperty('--y', dy + 'px');
+    p.style.setProperty('--r', rotation + 'deg');
+    
+    document.body.appendChild(p);
+    
+    setTimeout((function(el){
+      return function() {
+        if (el && el.parentNode) el.parentNode.removeChild(el);
+      };
+    })(p), 800);
+  }
+}
+
+// Kanban Drag and Drop Event Handlers
+var draggedTaskId = null;
+
+function handleTaskDragStart(e, taskId) {
+  draggedTaskId = taskId;
+  e.dataTransfer.setData('text/plain', taskId);
+  e.dataTransfer.effectAllowed = 'move';
+  setTimeout(function() {
+    var el = document.getElementById('k-card-' + taskId);
+    if (el) el.classList.add('dragging');
+  }, 0);
+}
+
+function handleTaskDragEnd(taskId) {
+  var el = document.getElementById('k-card-' + taskId);
+  if (el) el.classList.remove('dragging');
+  draggedTaskId = null;
+}
+
+function handleTaskDragOver(e, columnElement) {
+  e.preventDefault();
+  if (columnElement) {
+    columnElement.classList.add('drag-over');
+  }
+}
+
+function handleTaskDragLeave(e, columnElement) {
+  if (columnElement) {
+    columnElement.classList.remove('drag-over');
+  }
+}
+
+function handleTaskDrop(e, targetColumnType, columnElement) {
+  e.preventDefault();
+  if (columnElement) {
+    columnElement.classList.remove('drag-over');
+  }
+  
+  var taskId = e.dataTransfer.getData('text/plain') || draggedTaskId;
+  if (!taskId) return;
+  
+  var tObj = db.tasks.find(function(t) { return t.id === taskId; });
+  if (!tObj) return;
+  
+  var updated = false;
+  if (targetColumnType === 'completada') {
+    if (!tObj.done) {
+      tObj.done = true;
+      updated = true;
+      spawnConfetti(e.clientX, e.clientY);
+    }
+  } else {
+    if (tObj.priority !== targetColumnType || tObj.done) {
+      tObj.priority = targetColumnType;
+      tObj.done = false;
+      updated = true;
+    }
+  }
+  
+  if (updated) {
+    saveDB();
+    renderTasks();
+    renderDash();
+    updatePendingBadge();
+    var isDetailOpen = document.getElementById('clientDetail') && document.getElementById('clientDetail').classList.contains('open');
+    if (isDetailOpen && currentClient) openDetail(currentClient);
+  }
+}
+
+function taskBoardCard(t) {
+  var cl = db.clients.find(function(c) { return c.id === t.clientId; });
+  var od = isOverdue(t.due) && !t.done;
+  var tod = isToday(t.due) && !t.done;
+  var dueColor = od ? '#e24b4a' : tod ? 'var(--amber)' : 'var(--tx2)';
+  
+  var assocHtml = '';
+  if (t.dealId) {
+    var dl = db.deals.find(function(d){ return d.id === t.dealId; });
+    if (dl) {
+      assocHtml += '<span onclick="event.stopPropagation(); openDealModal(\'' + dl.id + '\')" style="background:rgba(124,111,224,0.06);color:var(--purple);border:1px solid rgba(124,111,224,0.1);padding:1px 5px;border-radius:6px;font-size:10.5px;cursor:pointer;display:inline-flex;align-items:center;gap:3px;" title="Ver negocio: ' + dl.title + '">💼 ' + dl.title + '</span>';
+    }
+  }
+  if (t.quoteId) {
+    var q = db.quotes.find(function(qObj){ return qObj.id === t.quoteId; });
+    if (q) {
+      assocHtml += '<span onclick="event.stopPropagation(); viewPDF(\'' + q.id + '\')" style="background:rgba(15,184,160,0.06);color:var(--teal);border:1px solid rgba(15,184,160,0.1);padding:1px 5px;border-radius:6px;font-size:10.5px;cursor:pointer;display:inline-flex;align-items:center;gap:3px;" title="Ver cotización">📄 COT-' + String(q.number).padStart(3, '0') + '</span>';
+    }
+  }
+  
+  var prioColors = {alta: 'rgba(226, 75, 74, 0.1)', media: 'rgba(245, 166, 35, 0.1)', baja: 'rgba(15, 184, 160, 0.1)'};
+  var prioTextColors = {alta: '#e24b4a', media: 'var(--amber)', baja: 'var(--teal)'};
+  var prioText = t.priority ? t.priority.toUpperCase() : 'MEDIA';
+  
+  return '<div class="kanban-card" id="k-card-' + t.id + '" draggable="true" ondragstart="handleTaskDragStart(event, \'' + t.id + '\')" ondragend="handleTaskDragEnd(\'' + t.id + '\')" onclick="openTaskModal(null, \'' + t.id + '\')">'
+    + '<div class="kanban-card-top">'
+    + '<div class="task-cb ' + (t.done?'done':'') + '" onclick="event.stopPropagation(); toggleTask(\'' + t.id + '\', event)">' + (t.done?'&#10003;':'') + '</div>'
+    + '<div class="kanban-card-title ' + (t.done?'done':'') + '">' + t.title + '</div>'
+    + '</div>'
+    + '<div class="kanban-card-meta">'
+    + (t.due ? '<span style="color:' + dueColor + '; font-weight:500;">📅 ' + (od?'Vencida: ':tod?'Hoy: ':'') + dt(t.due) + '</span>' : '')
+    + (cl ? '<span style="color:var(--tx2); font-weight:500;">👤 ' + cl.name + '</span>' : '')
+    + (t.category ? '<span style="color:var(--tx3); font-size:11px; font-style:italic;">🏷️ ' + t.category + '</span>' : '')
+    + (assocHtml ? '<div style="display:flex; flex-wrap:wrap; gap:4px; margin-top:3px;">' + assocHtml + '</div>' : '')
+    + '</div>'
+    + '<div class="kanban-card-footer">'
+    + '<span class="quick-badge" style="background:' + prioColors[t.priority] + '; color:' + prioTextColors[t.priority] + ';">' + prioText + '</span>'
+    + '<div style="display:flex; gap:6px;">'
+    + '<button type="button" class="bi btn-xs" style="padding:2px 6px; font-size:11px; border:1px solid var(--br);" onclick="event.stopPropagation(); openTaskModal(null,\'' + t.id + '\')">&#9998;</button>'
+    + '<button type="button" class="bi btn-xsAll" style="padding:2px 6px; font-size:11px; color:#e24b4a; border: 1px solid rgba(226,75,74,0.15); background:rgba(226,75,74,0.03);" onclick="event.stopPropagation(); deleteTaskDirect(\'' + t.id + '\')">&#128465;</button>'
+    + '</div>'
+    + '</div>'
+    + '</div>';
+}
+
+function renderKanbanBoard(filtered) {
+  var boardEl = document.getElementById('kanban-board-element');
+  if (!boardEl) return;
+  
+  var colBaja = filtered.filter(function(t){ return !t.done && t.priority === 'baja'; });
+  var colMedia = filtered.filter(function(t){ return !t.done && (t.priority === 'media' || !t.priority); });
+  var colAlta = filtered.filter(function(t){ return !t.done && t.priority === 'alta'; });
+  var colDone = filtered.filter(function(t){ return t.done; });
+  
+  var html = '';
+  
+  // Col 1: Alta
+  html += '<div class="kanban-column" id="k-col-alta" ondragover="handleTaskDragOver(event, this)" ondragleave="handleTaskDragLeave(event, this)" ondrop="handleTaskDrop(event, \'alta\', this)">'
+    + '<div class="kanban-column-header" style="border-bottom-color: #e24b4a;">'
+    + '<span>🔴 PRIORIDAD ALTA</span>'
+    + '<span class="kanban-column-count">' + colAlta.length + '</span>'
+    + '</div>'
+    + '<div class="kanban-cards-container">'
+    + (colAlta.length ? colAlta.map(taskBoardCard).join('') : '<div style="font-size:11.5px;color:var(--tx3);text-align:center;padding:1.5rem 0;">Arrastra aquí tareas de alta prioridad</div>')
+    + '</div>'
+    + '</div>';
+    
+  // Col 2: Media
+  html += '<div class="kanban-column" id="k-col-media" ondragover="handleTaskDragOver(event, this)" ondragleave="handleTaskDragLeave(event, this)" ondrop="handleTaskDrop(event, \'media\', this)">'
+    + '<div class="kanban-column-header" style="border-bottom-color: var(--amber);">'
+    + '<span>🟡 PRIORIDAD MEDIA</span>'
+    + '<span class="kanban-column-count">' + colMedia.length + '</span>'
+    + '</div>'
+    + '<div class="kanban-cards-container">'
+    + (colMedia.length ? colMedia.map(taskBoardCard).join('') : '<div style="font-size:11.5px;color:var(--tx3);text-align:center;padding:1.5rem 0;">Arrastra aquí tareas de prioridad media</div>')
+    + '</div>'
+    + '</div>';
+
+  // Col 3: Baja
+  html += '<div class="kanban-column" id="k-col-baja" ondragover="handleTaskDragOver(event, this)" ondragleave="handleTaskDragLeave(event, this)" ondrop="handleTaskDrop(event, \'baja\', this)">'
+    + '<div class="kanban-column-header" style="border-bottom-color: var(--teal);">'
+    + '<span>🟢 PRIORIDAD BAJA</span>'
+    + '<span class="kanban-column-count">' + colBaja.length + '</span>'
+    + '</div>'
+    + '<div class="kanban-cards-container">'
+    + (colBaja.length ? colBaja.map(taskBoardCard).join('') : '<div style="font-size:11.5px;color:var(--tx3);text-align:center;padding:1.5rem 0;">Arrastra aquí tareas de prioridad baja</div>')
+    + '</div>'
+    + '</div>';
+
+  // Col 4: Completadas
+  html += '<div class="kanban-column" id="k-col-completadas" ondragover="handleTaskDragOver(event, this)" ondragleave="handleTaskDragLeave(event, this)" ondrop="handleTaskDrop(event, \'completada\', this)">'
+    + '<div class="kanban-column-header" style="border-bottom-color: var(--purple);">'
+    + '<span>✨ COMPLETADAS</span>'
+    + '<span class="kanban-column-count">' + colDone.length + '</span>'
+    + '</div>'
+    + '<div class="kanban-cards-container">'
+    + (colDone.length ? colDone.map(taskBoardCard).join('') : '<div style="font-size:11.5px;color:var(--tx3);text-align:center;padding:1.5rem 0;">Drop here to complete</div>')
+    + '</div>'
+    + '</div>';
+
+  boardEl.innerHTML = html;
+}
+
 function renderTasks() {
   updatePendingBadge();
-  var filter = document.getElementById('task-filter').value;
-  var all;
-  if (filter === 'all') all = db.tasks;
-  else if (filter === 'done') all = db.tasks.filter(function(t){ return t.done; });
-  else all = db.tasks.filter(function(t){ return !t.done; });
+  populateTaskFilters();
 
+  var filter = document.getElementById('task-filter') ? document.getElementById('task-filter').value : 'pending';
+  var searchVal = document.getElementById('task-search') ? document.getElementById('task-search').value.toLowerCase().trim() : '';
+  var prioFilter = document.getElementById('task-prio-filter') ? document.getElementById('task-prio-filter').value : 'all';
+  var clientFilter = document.getElementById('task-client-filter') ? document.getElementById('task-client-filter').value : '';
+
+  // Calculate master progress stats from all DB tasks (unfiltered)
   var done = db.tasks.filter(function(t){ return t.done; }).length;
   var total = db.tasks.length;
   var pct = total ? Math.round(done/total*100) : 0;
-  document.getElementById('task-progress-label').textContent = done + '/' + total + ' completadas (' + pct + '%)';
-  document.getElementById('task-progress-bar').style.width = pct + '%';
+  
+  var labelEl = document.getElementById('task-progress-label');
+  var barEl = document.getElementById('task-progress-bar');
+  if (labelEl) labelEl.textContent = done + '/' + total + ' completadas (' + pct + '%)';
+  if (barEl) barEl.style.width = pct + '%';
 
-  var tod = todayStr();
-  var overdue = all.filter(function(t){ return !t.done && t.due && t.due < tod; });
-  var todayT = all.filter(function(t){ return !t.done && t.due === tod; });
-  var upcoming = all.filter(function(t){ return !t.done && t.due && t.due > tod; });
-  var noDate = all.filter(function(t){ return !t.done && !t.due; });
-  var doneT = all.filter(function(t){ return t.done; });
+  // Apply filters to tasks list
+  var filtered = db.tasks.filter(function(t) {
+    if (filter === 'pending' && t.done) return false;
+    if (filter === 'done' && !t.done) return false;
 
-  function section(elId, title, tasks, color) {
-    var el = document.getElementById(elId);
-    if (!tasks.length) { el.innerHTML = ''; return; }
-    el.innerHTML = '<div class="card"><div class="ct" style="color:' + (color||'var(--tx)') + '">' + title
-      + ' <span style="font-size:12px;color:var(--tx2);font-weight:400">(' + tasks.length + ')</span></div>'
-      + tasks.map(function(t){ return taskRow(t, false); }).join('') + '</div>';
+    if (searchVal) {
+      var matchTitle = (t.title || '').toLowerCase().indexOf(searchVal) >= 0;
+      var matchNotes = (t.notes || '').toLowerCase().indexOf(searchVal) >= 0;
+      var matchCat = (t.category || '').toLowerCase().indexOf(searchVal) >= 0;
+      if (!matchTitle && !matchNotes && !matchCat) return false;
+    }
+
+    if (prioFilter !== 'all' && t.priority !== prioFilter) return false;
+    if (clientFilter && t.clientId !== clientFilter) return false;
+
+    return true;
+  });
+
+  // Ensure current mode is read/initialized
+  if (!window.taskViewMode) {
+    window.taskViewMode = localStorage.getItem('task_view_mode') || 'list';
   }
-  section('tasks-overdue', 'Vencidas', overdue, '#e24b4a');
-  section('tasks-today', 'Para hoy', todayT, 'var(--amber)');
-  section('tasks-upcoming', 'Próximas', upcoming, 'var(--purple)');
-  section('tasks-no-date', 'Sin fecha', noDate, 'var(--tx2)');
-  section('tasks-done-section', 'Completadas', doneT, 'var(--tx2)');
 
-  if (!all.length) {
-    document.getElementById('tasks-no-date').innerHTML = '<div class="empty">' + (filter==='done'?'Sin tareas completadas.':'¡Sin tareas pendientes!') + '</div>';
+  // Update tabs selected class
+  var listBtn = document.getElementById('btn-task-mode-list');
+  var boardBtn = document.getElementById('btn-task-mode-board');
+  if (listBtn && boardBtn) {
+    if (window.taskViewMode === 'board') {
+      listBtn.style.background = 'transparent';
+      listBtn.style.color = 'var(--tx2)';
+      listBtn.style.boxShadow = 'none';
+      listBtn.classList.remove('ft-active');
+      
+      boardBtn.style.background = 'var(--bg)';
+      boardBtn.style.color = 'var(--purple)';
+      boardBtn.style.boxShadow = '0 1px 3px rgba(0,0,0,0.1)';
+      boardBtn.classList.add('ft-active');
+    } else {
+      boardBtn.style.background = 'transparent';
+      boardBtn.style.color = 'var(--tx2)';
+      boardBtn.style.boxShadow = 'none';
+      boardBtn.classList.remove('ft-active');
+      
+      listBtn.style.background = 'var(--bg)';
+      listBtn.style.color = 'var(--purple)';
+      listBtn.style.boxShadow = '0 1px 3px rgba(0,0,0,0.1)';
+      listBtn.classList.add('ft-active');
+    }
+  }
+
+  var listContainer = document.getElementById('tasks-list-container');
+  var boardContainer = document.getElementById('tasks-board-container');
+
+  if (window.taskViewMode === 'board') {
+    if (listContainer) listContainer.style.display = 'none';
+    if (boardContainer) boardContainer.style.display = 'block';
+    renderKanbanBoard(filtered);
+  } else {
+    if (boardContainer) boardContainer.style.display = 'none';
+    if (listContainer) listContainer.style.display = 'block';
+
+    var tod = todayStr();
+    var overdue = filtered.filter(function(t){ return !t.done && t.due && t.due < tod; });
+    var todayT = filtered.filter(function(t){ return !t.done && t.due === tod; });
+    var upcoming = filtered.filter(function(t){ return !t.done && t.due && t.due > tod; });
+    var noDate = filtered.filter(function(t){ return !t.done && !t.due; });
+    var doneT = filtered.filter(function(t){ return t.done; });
+
+    function section(elId, title, tasks, color) {
+      var el = document.getElementById(elId);
+      if (!el) return;
+      if (!tasks.length) { el.innerHTML = ''; return; }
+      el.innerHTML = '<div class="card"><div class="ct" style="color:' + (color||'var(--tx)') + '">' + title
+        + ' <span style="font-size:12px;color:var(--tx2);font-weight:400">(' + tasks.length + ')</span></div>'
+        + tasks.map(function(t){ return taskRow(t, false); }).join('') + '</div>';
+    }
+    section('tasks-overdue', 'Vencidas', overdue, '#e24b4a');
+    section('tasks-today', 'Para hoy', todayT, 'var(--amber)');
+    section('tasks-upcoming', 'Próximas', upcoming, 'var(--purple)');
+    section('tasks-no-date', 'Sin fecha', noDate, 'var(--tx2)');
+    section('tasks-done-section', 'Completadas', doneT, 'var(--tx2)');
+
+    var nodateEl = document.getElementById('tasks-no-date');
+    if (!filtered.length && nodateEl) {
+      nodateEl.innerHTML = '<div class="empty">' + (filter==='done'?'Sin tareas completadas.':'¡Sin tareas en esta vista!') + '</div>';
+    }
   }
 }
+
 function openTaskModal(clientId, taskId) {
   var t = null;
   if (taskId) { for (var i = 0; i < db.tasks.length; i++) { if (db.tasks[i].id === taskId) { t = db.tasks[i]; break; } } }
@@ -3750,6 +4308,16 @@ window.openTaskModal = openTaskModal;
 window.saveTask = saveTask;
 window.delTask = delTask;
 window.customConfirm = customConfirm;
+window.setTaskViewMode = setTaskViewMode;
+window.quickAddTaskObj = quickAddTaskObj;
+window.spawnConfetti = spawnConfetti;
+window.handleTaskDragStart = handleTaskDragStart;
+window.handleTaskDragEnd = handleTaskDragEnd;
+window.handleTaskDragOver = handleTaskDragOver;
+window.handleTaskDragLeave = handleTaskDragLeave;
+window.handleTaskDrop = handleTaskDrop;
+window.populateTaskFilters = populateTaskFilters;
+window.renderKanbanBoard = renderKanbanBoard;
 
 // COPIA DE SEGURIDAD (BACKUP & RESTORE)
 function openBackupModal() {
