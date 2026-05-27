@@ -267,6 +267,7 @@ textarea{resize:vertical;min-height:75px;line-height:1.5}
       <span style="width:6px; height:6px; background:#e24b4a; border-radius:50%; display:inline-block;" id="cloud-sync-dot"></span>
       <span id="cloud-sync-text">Cargando...</span>
     </span>
+    <button class="btn btn-ghost btn-sm" onclick="openBackupModal()" style="color:#fff; border-color:rgba(255,255,255,0.25); background:rgba(255,255,255,0.06); font-weight:400; display:flex; align-items:center; gap:5px;" title="Copia de seguridad local para guardar en tu portátil"><span style="font-size:13px">💾</span> Copia de seguridad</button>
     <button class="btn btn-primary btn-sm" onclick="openClientModal(null)">+ Nuevo cliente</button>
     <button class="btn btn-ghost btn-sm" onclick="logout()" style="color:#fff; border-color:rgba(255,255,255,0.25); background:rgba(255,255,255,0.06); font-weight:400;">Cerrar sesión</button>
   </div>
@@ -898,6 +899,48 @@ textarea{resize:vertical;min-height:75px;line-height:1.5}
     <div class="mf" style="justify-content: space-between; align-items: center; border-top: 1px solid var(--br); padding-top: 12px;">
       <button class="btn btn-ghost btn-sm" style="color: var(--pink); border: 1px solid var(--pink); padding: 5px 10px;" id="btn-empty-trash" onclick="emptyCurrentTrashTab()">Vaciar esta sección</button>
       <button class="btn btn-primary" onclick="mClose('m-trash')">Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: BACKUP (C.S.) -->
+<div class="backdrop" id="m-backup" style="z-index: 9997;" onclick="bgClose(event,'m-backup')">
+  <div class="modal" style="max-width: 480px;" onclick="event.stopPropagation()">
+    <div class="mh">
+      <span class="mt2" style="font-weight: 600; display:flex; align-items:center; gap:8px;">💾 Copia de Seguridad</span>
+      <button class="cbtn" onclick="mClose('m-backup')">&#10005;</button>
+    </div>
+    <div class="mb2">
+      <p style="font-size: 13.5px; color: var(--tx2); line-height: 1.5; margin-bottom: 1.5rem;">
+        Puedes descargar una copia de seguridad local de todos tus datos del CRM (clientes, tratos, cotizaciones, tareas, documentos, y papelera) guardada directamente en tu portátil en un archivo seguro en formato JSON.
+      </p>
+
+      <!-- Export Card -->
+      <div style="background: var(--sur2); border: 1px solid var(--br); border-radius: 12px; padding: 1.25rem; margin-bottom: 1.25rem; display: flex; flex-direction: column; gap: 10px;">
+        <h4 style="font-size: 14px; font-weight: 600; color: var(--tx);">Generar Copia de Seguridad</h4>
+        <p style="font-size: 11.5px; color: var(--tx2); margin: 0;">Descarga el estado actual de tu CRM para guardarlo en tu portátil.</p>
+        <button class="btn btn-primary" onclick="exportBackupData()" style="justify-content: center; gap: 8px; font-weight: 600; margin-top: 4px;">
+          ⬇️ Exportar Copia de Seguridad (.json)
+        </button>
+      </div>
+
+      <!-- Import Card -->
+      <div style="background: var(--sur2); border: 1px dashed var(--br2); border-radius: 12px; padding: 1.25rem; display: flex; flex-direction: column; gap: 10px;">
+        <h4 style="font-size: 14px; font-weight: 600; color: var(--tx);">Restaurar Copia de Seguridad</h4>
+        <p style="font-size: 11.5px; color: var(--tx2); margin: 0;">Selecciona un archivo <code>.json</code> previamente exportado para restaurar tu CRM al estado de ese archivo.</p>
+        
+        <div style="border: 2px dashed rgba(124,111,224,0.3); border-radius: 8px; padding: 16px; text-align: center; cursor: pointer; background: rgba(124,111,224,0.02); transition: all 0.2s;" ondragover="event.preventDefault(); this.style.background='rgba(124,111,224,0.06)'" ondragleave="this.style.background='rgba(124,111,224,0.02)'" ondrop="handleBackupDrop(event)" onclick="document.getElementById('backup-file-input').click()">
+          <span style="font-size: 20px; display: block; margin-bottom: 6px;">📂</span>
+          <span style="font-size: 12.5px; color: var(--purple); font-weight: 500; text-decoration: underline;">Haz clic o arrastra un archivo aquí</span>
+          <span style="font-size: 10.5px; color: var(--tx3); display: block; margin-top: 4px;">Solo archivos .json de Integlis CRM</span>
+          <input type="file" id="backup-file-input" accept=".json" style="display: none;" onchange="handleBackupFileSelect(event)">
+        </div>
+        
+        <div id="backup-status-msg" style="font-size: 12px; font-weight: 500; display: none; padding: 8px; border-radius: 6px; margin-top: 8px; line-height: 1.45;"></div>
+      </div>
+    </div>
+    <div class="mf" style="border-top: 1px solid var(--br); padding-top: 12px;">
+      <button class="btn btn-ghost" onclick="mClose('m-backup')">Cerrar</button>
     </div>
   </div>
 </div>
@@ -3707,6 +3750,174 @@ window.openTaskModal = openTaskModal;
 window.saveTask = saveTask;
 window.delTask = delTask;
 window.customConfirm = customConfirm;
+
+// COPIA DE SEGURIDAD (BACKUP & RESTORE)
+function openBackupModal() {
+  var statusEl = document.getElementById('backup-status-msg');
+  if (statusEl) {
+    statusEl.style.display = 'none';
+    statusEl.className = '';
+    statusEl.innerHTML = '';
+  }
+  mOpen('m-backup');
+}
+
+function exportBackupData() {
+  var bData = {
+    source: "Integlis CRM Backup",
+    timestamp: new Date().toISOString(),
+    db: window.db
+  };
+  
+  var str = JSON.stringify(bData, null, 2);
+  var blob = new Blob([str], { type: "application/json" });
+  var url = URL.createObjectURL(blob);
+  
+  var a = document.createElement("a");
+  var dateStr = new Date().toISOString().slice(0, 10);
+  a.href = url;
+  a.download = "integlis_crm_backup_" + dateStr + ".json";
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function handleBackupDrop(e) {
+  e.preventDefault();
+  var file = e.dataTransfer.files[0];
+  if (file) processBackupFile(file);
+}
+
+function handleBackupFileSelect(e) {
+  var file = e.target.files[0];
+  if (file) processBackupFile(file);
+  e.target.value = ''; // Reset file input
+}
+
+function processBackupFile(file) {
+  var reader = new FileReader();
+  var statusEl = document.getElementById('backup-status-msg');
+  if (!statusEl) return;
+  
+  statusEl.style.display = 'block';
+  statusEl.style.background = 'rgba(124, 111, 224, 0.08)';
+  statusEl.style.color = 'var(--purple)';
+  statusEl.textContent = 'Analizando archivo...';
+
+  reader.onload = function(evt) {
+    try {
+      var data = JSON.parse(evt.target.result);
+      
+      if (!data || typeof data !== 'object') {
+        throw new Error("El archivo no contiene un formato de datos válido.");
+      }
+      
+      var targetDb = null;
+      if (data.source === "Integlis CRM Backup" && data.db) {
+        targetDb = data.db;
+      } else if (data.clients && Array.isArray(data.clients)) {
+        targetDb = data;
+      } else {
+        throw new Error("El archivo no parece ser un archivo de copia de seguridad válido de Integlis CRM.");
+      }
+
+      if (!Array.isArray(targetDb.clients)) {
+        throw new Error("Falta la colección de Clientes en el archivo.");
+      }
+
+      statusEl.style.background = 'rgba(15, 184, 160, 0.08)';
+      statusEl.style.color = 'var(--teal)';
+      statusEl.innerHTML = '✅ Copia de seguridad válida detectada.<br>' +
+        '• Clientes: ' + (targetDb.clients ? targetDb.clients.length : 0) + '<br>' +
+        '• Oportunidades: ' + (targetDb.deals ? targetDb.deals.length : 0) + '<br>' +
+        '• Cotizaciones: ' + (targetDb.quotes ? targetDb.quotes.length : 0) + '<br>' +
+        '• Documentos: ' + (targetDb.docs ? targetDb.docs.length : 0) + '<br>' +
+        '• Tareas: ' + (targetDb.tasks ? targetDb.tasks.length : 0);
+
+      customConfirm('¡Atención! Restaurar esta copia reemplazará COMPLETAMENTE tus datos actuales en local y en la nube. ¿Estás seguro de que deseas continuar con la restauración?', function() {
+        applyBackupRestore(targetDb);
+      });
+
+    } catch(err) {
+      statusEl.style.background = 'rgba(226, 75, 74, 0.08)';
+      statusEl.style.color = '#e24b4a';
+      statusEl.textContent = 'Error: ' + err.message;
+    }
+  };
+
+  reader.onerror = function() {
+    statusEl.style.background = 'rgba(226, 75, 74, 0.08)';
+    statusEl.style.color = '#e24b4a';
+    statusEl.textContent = 'Error al leer el archivo.';
+  };
+
+  reader.readAsText(file);
+}
+
+function applyBackupRestore(targetDb) {
+  var statusEl = document.getElementById('backup-status-msg');
+  if (!statusEl) return;
+  
+  window.initialLocalData = JSON.parse(JSON.stringify(window.db));
+  
+  var COLLECTIONS_LIST = ['clients', 'deals', 'quotes', 'docs', 'tasks', 'trash'];
+  COLLECTIONS_LIST.forEach(function(key) {
+    if (!Array.isArray(targetDb[key])) {
+      targetDb[key] = [];
+    }
+  });
+
+  window.db = targetDb;
+  if (typeof db !== 'undefined') {
+    db = targetDb;
+  }
+
+  if (typeof saveDB === 'function') {
+    saveDB();
+  } else {
+    localStorage.setItem('integlis_crm4', JSON.stringify(targetDb));
+  }
+
+  statusEl.style.background = 'rgba(15, 184, 160, 0.08)';
+  statusEl.style.color = 'var(--teal)';
+  statusEl.textContent = 'Sincronizando restauración con la nube...';
+
+  if (typeof window.saveDB === 'function') {
+    window.saveDB().then(function() {
+      if (typeof window.renderAllViews === 'function') {
+        window.renderAllViews();
+      }
+      statusEl.textContent = '🎉 ¡Copia de seguridad restaurada y sincronizada correctamente!';
+      setTimeout(function() {
+        mClose('m-backup');
+      }, 1500);
+    }).catch(function(syncErr) {
+      console.error(syncErr);
+      statusEl.style.background = 'rgba(226, 75, 74, 0.08)';
+      statusEl.style.color = '#e24b4a';
+      statusEl.textContent = 'Sincronizado localmente, pero error al sincronizar con Firebase: ' + syncErr.message;
+      if (typeof window.renderAllViews === 'function') {
+        window.renderAllViews();
+      }
+    });
+  } else {
+    if (typeof window.renderAllViews === 'function') {
+      window.renderAllViews();
+    }
+    statusEl.textContent = '🎉 Copia de seguridad restaurada localmente de forma exitosa.';
+    setTimeout(function() {
+      mClose('m-backup');
+    }, 1500);
+  }
+}
+
+window.openBackupModal = openBackupModal;
+window.exportBackupData = exportBackupData;
+window.handleBackupDrop = handleBackupDrop;
+window.handleBackupFileSelect = handleBackupFileSelect;
+window.processBackupFile = processBackupFile;
+window.applyBackupRestore = applyBackupRestore;
 
 function adjustPreviewScale() {
   var printArea = document.getElementById('print-area');
