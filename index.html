@@ -750,7 +750,10 @@ textarea{resize:vertical;min-height:75px;line-height:1.5}
         </div>
         <div class="fg"><label class="fl">Industria</label><input id="c-industry" placeholder="Retail, Manufactura..."></div>
       </div>
-      <div class="fg"><label class="fl">Sitio web</label><input id="c-web" placeholder="https://empresa.com"></div>
+      <div class="fr">
+        <div class="fg"><label class="fl">Sitio web</label><input id="c-web" placeholder="https://empresa.com"></div>
+        <div class="fg"><label class="fl">Perfil LinkedIn</label><input id="c-linkedin" placeholder="https://linkedin.com/in/usuario"></div>
+      </div>
       <div class="fg"><label class="fl">Notas</label><textarea id="c-notes" placeholder="Contexto relevante..."></textarea></div>
       
       <div style="border-top:1px dashed var(--br); margin-top:1.5rem; padding-top:1rem;">
@@ -1893,6 +1896,8 @@ function openDetail(id) {
         + (con.email ? '✉️ <a href="mailto:' + con.email + '" style="color:var(--tx2) !important;">' + con.email + '</a>' : '')
         + (con.email && con.phone ? ' · ' : '')
         + (con.phone ? '📞 ' + con.phone : '')
+        + ((con.email || con.phone) && con.linkedin ? ' · ' : '')
+        + (con.linkedin ? '<span style="color:#0a66c2">■</span> <a href="' + (con.linkedin.startsWith('http') ? con.linkedin : 'https://' + con.linkedin) + '" target="_blank" rel="noopener noreferrer" style="color:#0a66c2 !important; font-weight:500;">LinkedIn</a>' : '')
         + '  </div>'
         + '</div>'
         + '</div>';
@@ -2064,7 +2069,8 @@ function openDetail(id) {
     + (c.email ? '<tr><td style="color:var(--tx2);padding:5px 0;width:80px">Email</td><td>' + c.email + '</td></tr>' : '')
     + (c.phone ? '<tr><td style="color:var(--tx2);padding:5px 0">Tel</td><td>' + c.phone + '</td></tr>' : '')
     + (c.industry ? '<tr><td style="color:var(--tx2);padding:5px 0">Industria</td><td>' + c.industry + '</td></tr>' : '')
-    + (c.web ? '<tr><td style="color:var(--tx2);padding:5px 0">Web</td><td><a href="' + c.web + '" target="_blank">' + c.web + '</a></td></tr>' : '')
+    + (c.web ? '<tr><td style="color:var(--tx2);padding:5px 0">Web</td><td><a href="' + (c.web.startsWith('http') ? c.web : 'https://' + c.web) + '" target="_blank">' + c.web + '</a></td></tr>' : '')
+    + (c.linkedin ? '<tr><td style="color:var(--tx2);padding:5px 0">LinkedIn</td><td><a href="' + (c.linkedin.startsWith('http') ? c.linkedin : 'https://' + c.linkedin) + '" target="_blank" style="color:#0a66c2 !important; font-weight:500;">Perfiles LinkedIn 🔗</a></td></tr>' : '')
     + '</table>'
     + (c.notes ? '<div style="margin-top:12px;padding:10px;background:var(--sur2);border-radius:8px;font-size:13px;color:var(--tx2);border-left:3px solid var(--purple)">' + c.notes + '</div>' : '')
     + extraContactsHtml
@@ -2247,6 +2253,7 @@ function addModalContactRow(contact) {
   var emailVal = contact ? (contact.email || '') : '';
   var phoneVal = contact ? (contact.phone || '') : '';
   var roleVal = contact ? (contact.role || '') : '';
+  var linkedinVal = contact ? (contact.linkedin || '') : '';
   var cid = contact ? (contact.id || '') : '';
   
   var div = document.createElement('div');
@@ -2266,10 +2273,11 @@ function addModalContactRow(contact) {
     + '  <div class="fg" style="margin:0;"><label class="fl" style="font-size:11px; margin-bottom:2px;">Nombre de la persona</label><input class="mc-name" value="' + nameVal.replace(/"/g, '&quot;') + '" placeholder="Ej. Carlos Ruiz" style="padding:4px 8px; font-size:12px; height:28px; background:var(--sur); border:1px solid var(--br2); border-radius:4px; width:100%;"></div>'
     + '  <div class="fg" style="margin:0;"><label class="fl" style="font-size:11px; margin-bottom:2px;">Cargo / Puesto / Rol</label><input class="mc-role" value="' + roleVal.replace(/"/g, '&quot;') + '" placeholder="Ej. Gerente de Ventas" style="padding:4px 8px; font-size:12px; height:28px; background:var(--sur); border:1px solid var(--br2); border-radius:4px; width:100%;"></div>'
     + '</div>'
-    + '<div class="fr" style="margin:0; gap:8px;">'
+    + '<div class="fr" style="margin-bottom:6px; gap:8px;">'
     + '  <div class="fg" style="margin:0;"><label class="fl" style="font-size:11px; margin-bottom:2px;">Email</label><input class="mc-email" type="email" value="' + emailVal.replace(/"/g, '&quot;') + '" placeholder="carlos@empresa.com" style="padding:4px 8px; font-size:12px; height:28px; background:var(--sur); border:1px solid var(--br2); border-radius:4px; width:100%;"></div>'
     + '  <div class="fg" style="margin:0;"><label class="fl" style="font-size:11px; margin-bottom:2px;">Teléfono</label><input class="mc-phone" value="' + phoneVal.replace(/"/g, '&quot;') + '" placeholder="+502 9876 5432" style="padding:4px 8px; font-size:12px; height:28px; background:var(--sur); border:1px solid var(--br2); border-radius:4px; width:100%;"></div>'
-    + '</div>';
+    + '</div>'
+    + '<div class="fg" style="margin:0;"><label class="fl" style="font-size:11px; margin-bottom:2px;">Perfil de LinkedIn</label><input class="mc-linkedin" value="' + linkedinVal.replace(/"/g, '&quot;') + '" placeholder="https://linkedin.com/in/nombre-usuario" style="padding:4px 8px; font-size:12px; height:28px; background:var(--sur); border:1px solid var(--br2); border-radius:4px; width:100%;"></div>';
     
   container.appendChild(div);
 }
@@ -2292,6 +2300,7 @@ function openClientModal(id) {
   document.getElementById('c-phone').value = c ? (c.phone||'') : '';
   document.getElementById('c-industry').value = c ? (c.industry||'') : '';
   document.getElementById('c-web').value = c ? (c.web||'') : '';
+  document.getElementById('c-linkedin').value = c ? (c.linkedin||'') : '';
   document.getElementById('c-notes').value = c ? (c.notes||'') : '';
   var currentStatus = 'Prospecto';
   if (c && c.status) {
@@ -2332,6 +2341,7 @@ function saveClient() {
     var roleInput = row.querySelector('.mc-role');
     var emailInput = row.querySelector('.mc-email');
     var phoneInput = row.querySelector('.mc-phone');
+    var linkedinInput = row.querySelector('.mc-linkedin');
     var cName = nameInput ? nameInput.value.trim() : '';
     if (cName) {
       contacts.push({
@@ -2339,7 +2349,8 @@ function saveClient() {
         name: cName,
         role: roleInput ? roleInput.value.trim() : '',
         email: emailInput ? emailInput.value.trim() : '',
-        phone: phoneInput ? phoneInput.value.trim() : ''
+        phone: phoneInput ? phoneInput.value.trim() : '',
+        linkedin: linkedinInput ? linkedinInput.value.trim() : ''
       });
     }
   });
@@ -2349,6 +2360,7 @@ function saveClient() {
     phone:document.getElementById('c-phone').value.trim(),
     industry:document.getElementById('c-industry').value.trim(),
     web:document.getElementById('c-web').value.trim(),
+    linkedin:document.getElementById('c-linkedin').value.trim(),
     notes:document.getElementById('c-notes').value.trim(),
     status:document.getElementById('c-status').value,
     createdAt:new Date().toISOString(),
