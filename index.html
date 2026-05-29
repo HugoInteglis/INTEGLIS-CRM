@@ -1906,6 +1906,152 @@ function openDetail(id) {
   var detailContactName = c.name || c.company;
   var detailCompanySubText = c.name ? c.company : '<span style="color:var(--tx3); font-style:italic">Sin contacto principal</span>';
 
+  // Sort interactions by date descending (newest first)
+  var interactions = c.interactions || [];
+  interactions.sort(function(a, b) {
+    return new Date(b.date) - new Date(a.date);
+  });
+
+  var interactionsListHtml = '';
+  if (interactions.length) {
+    interactionsListHtml = '<div style="display:flex; flex-direction:column; gap:12px;">';
+    for (var i = 0; i < interactions.length; i++) {
+      var act = interactions[i];
+      var badgeClass = getInteractionBadgeClass(act.outcome);
+      var typeIcons = {
+        'Llamada': '📞',
+        'Mensaje': '💬',
+        'Correo': '✉️',
+        'Reunión': '🤝',
+        'Otro': '🌐'
+      };
+      var icon = typeIcons[act.type] || '📞';
+      
+      var formattedDate = '';
+      if (act.date) {
+        var dParts = act.date.split('T');
+        formattedDate = dt(dParts[0]) + (dParts[1] ? ' ' + dParts[1] : '');
+      }
+
+      var channelStyle = 'background:var(--sur2); border:1px solid var(--br2); color:var(--tx2);';
+      if (act.channel === 'LinkedIn') {
+        channelStyle = 'background:rgba(10,102,194,0.08); border:1px solid rgba(10,102,194,0.22); color:#0a66c2; font-weight:500;';
+      } else if (act.channel === 'WhatsApp') {
+        channelStyle = 'background:rgba(37,211,102,0.08); border:1px solid rgba(37,211,102,0.22); color:#128c7e; font-weight:500;';
+      }
+
+      var contactBadgeHtml = '';
+      if (act.contactName) {
+        contactBadgeHtml = '<span style="font-size:11px; background:rgba(124,111,224,0.06); border:1px solid rgba(124,111,224,0.15); color:var(--purple); padding:1px 6px; border-radius:4px; font-weight:500;">👤 ' + act.contactName + '</span>';
+      }
+      
+      interactionsListHtml += '<div style="display:flex; align-items:flex-start; gap:12px; padding:12px; background:var(--sur); border:1px solid var(--br); border-radius:10px; position:relative; box-shadow:0 1px 3px rgba(0,0,0,0.01);">'
+        + '  <div style="font-size:16px; min-width:32px; height:32px; background:rgba(124,111,224,0.08); border-radius:50%; display:flex; align-items:center; justify-content:center; color:var(--purple);">' + icon + '</div>'
+        + '  <div style="flex:1; min-width:0;">'
+        + '    <div style="display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin-bottom:4px;">'
+        + '      <span style="font-weight:600; font-size:13px; color:var(--tx);">' + act.type + '</span>'
+        + '      <span style="font-size:11px; ' + channelStyle + ' padding:1px 6px; border-radius:4px;">' + (act.channel || 'Otros') + '</span>'
+        + '      ' + contactBadgeHtml
+        + '      <span class="badge ' + badgeClass + '" style="font-size:10.5px; padding:2px 8px;">' + (act.outcome || '') + '</span>'
+        + '      <span style="font-size:11px; color:var(--tx3); margin-left:auto;">🕒 ' + formattedDate + '</span>'
+        + '    </div>'
+        + '    <div style="font-size:12.5px; color:var(--tx2); line-height:1.4; white-space:pre-wrap; margin-top:4px;">' + (act.notes ? act.notes.replace(/</g, '&lt;').replace(/>/g, '&gt;') : '<span style="color:var(--tx3); font-style:italic">Sin notas registradas</span>') + '</div>'
+        + '  </div>'
+        + '  <button class="bi btn-xsAll" onclick="deleteInteraction(\'' + id + '\', \'' + act.id + '\')" style="color:#e24b4a; border:1px solid rgba(226,75,74,0.15); background:rgba(226,75,74,0.02); padding:4px 6px; font-size:11px; border-radius:6px; cursor:pointer;" title="Eliminar registro">&#128465;</button>'
+        + '</div>';
+    }
+    interactionsListHtml += '</div>';
+  } else {
+    interactionsListHtml = '<div style="color:var(--tx2); font-size:13px; padding:2.5rem 0; text-align:center; background:rgba(0,0,0,0.01); border:1px dashed var(--br2); border-radius:10px;">📋 No hay interacciones registradas aún para este cliente. ¡Registra llamadas, WhatsApps o correos arriba para llevar un seguimiento detallado!</div>';
+  }
+
+  // Populate dynamic contact options
+  var contactOptionsHtml = '<option value="">-- Toda la empresa / Sin especificar --</option>';
+  if (c.name) {
+    contactOptionsHtml += '<option value="' + c.name.replace(/"/g, '&quot;') + '">' + c.name + ' (Contacto Principal)</option>';
+  }
+  if (c.contacts && c.contacts.length) {
+    c.contacts.forEach(function(con) {
+      if (con.name) {
+        contactOptionsHtml += '<option value="' + con.name.replace(/"/g, '&quot;') + '">' + con.name + ' (' + (con.role || 'Contacto adicional') + ')</option>';
+      }
+    });
+  }
+
+  var formContainerHtml = 
+      '<div id="interaction-form-container" style="display:none; background:var(--sur2); border:1px solid var(--br2); border-radius:10px; padding:15px; margin-bottom:15px;">'
+    + '  <div style="font-weight:600; font-size:13px; margin-bottom:10px; color:var(--purple); text-align:left;">Registrar Nueva Interacción</div>'
+    + '  <div class="fr" style="margin-bottom:10px;">'
+    + '    <div class="fg" style="margin-bottom:0">'
+    + '      <label class="fl">Tipo de Comunicación</label>'
+    + '      <select id="int-type" onchange="autoFillChannelAndOutcome()">'
+    + '        <option value="Llamada">📞 Llamada</option>'
+    + '        <option value="Mensaje">💬 Mensaje (WhatsApp/Social)</option>'
+    + '        <option value="Correo">✉️ Correo Electrónico</option>'
+    + '        <option value="Reunión">🤝 Reunión / Presentación</option>'
+    + '        <option value="Otro">🌐 Otro / Nota de seguimiento</option>'
+    + '      </select>'
+    + '    </div>'
+    + '    <div class="fg" style="margin-bottom:0">'
+    + '      <label class="fl">Canal / Medio</label>'
+    + '      <select id="int-channel">'
+    + '        <option value="Teléfono">Teléfono directo</option>'
+    + '        <option value="WhatsApp">WhatsApp</option>'
+    + '        <option value="LinkedIn">LinkedIn</option>'
+    + '        <option value="Email">Correo electrónico</option>'
+    + '        <option value="Presencial">Presencial</option>'
+    + '        <option value="Zoom/Google Meet">Videollamada</option>'
+    + '        <option value="Otro">Otro/Varios</option>'
+    + '      </select>'
+    + '    </div>'
+    + '  </div>'
+    + '  <div class="fr" style="margin-bottom:10px;">'
+    + '    <div class="fg" style="margin-bottom:0">'
+    + '      <label class="fl">Resultado / Estado</label>'
+    + '      <select id="int-outcome">'
+    + '        <option value="Contestó">Contestó / Hablamos</option>'
+    + '        <option value="Llamada perdida">Llamada perdida / No contestó</option>'
+    + '        <option value="Mensaje enviado">Mensaje enviado (pendiente respuesta)</option>'
+    + '        <option value="Leido/Respondido">Contestó / Leyó mensaje</option>'
+    + '        <option value="Reunión completada">Reunión completada</option>'
+    + '        <option value="Reunión cancelada">Reunión pospuesta / cancelada</option>'
+    + '        <option value="Sin respuesta">Sin respuesta / Dejó en visto</option>'
+    + '      </select>'
+    + '    </div>'
+    + '    <div class="fg" style="margin-bottom:0">'
+    + '      <label class="fl">Dirigido a / Contacto Involucrado</label>'
+    + '      <select id="int-contact">'
+    +          contactOptionsHtml
+    + '      </select>'
+    + '    </div>'
+    + '  </div>'
+    + '  <div class="fr" style="margin-bottom:10px;">'
+    + '    <div class="fg" style="margin-bottom:0; flex:1;">'
+    + '      <label class="fl">Fecha y Hora</label>'
+    + '      <input type="datetime-local" id="int-date">'
+    + '    </div>'
+    + '    <div style="flex:1;"></div>'
+    + '  </div>'
+    + '  <div class="fg" style="margin-bottom:12px">'
+    + '    <label class="fl">Notas / Bitácora de lo conversado</label>'
+    + '    <textarea id="int-notes" placeholder="Ej: Se conversó sobre la nueva propuesta. Agendamos revisar alcance el próximo jueves." rows="2" style="min-height:55px;"></textarea>'
+    + '  </div>'
+    + '  <div style="display:flex; justify-content:flex-end; gap:8px;">'
+    + '    <button class="btn btn-ghost btn-sm" onclick="toggleInteractionForm(false)">Cancelar</button>'
+    + '    <button class="btn btn-primary btn-sm" onclick="saveNewInteraction(\'' + id + '\')">Guardar Registro</button>'
+    + '  </div>'
+    + '</div>';
+
+  var interactionsCardHtml = 
+      '<div class="card" style="margin-bottom:1rem;">'
+    + '  <div class="ct" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">'
+    + '    <span style="display:flex; align-items:center; gap:6px;">📈 Bitácora de Interacciones y Seguimiento (' + interactions.length + ')</span>'
+    + '    <button class="btn btn-primary btn-sm" id="btn-toggle-interaction-form" onclick="toggleInteractionForm(true)" style="padding:4px 10px;">+ Registrar interacción</button>'
+    + '  </div>'
+    + '  ' + formContainerHtml
+    + '  ' + interactionsListHtml
+    + '</div>';
+
   document.getElementById('detail-body').innerHTML =
     '<div class="grid-2col" style="margin-bottom:1rem">'
     + '<div class="card"><div class="ct">Información de contacto</div>'
@@ -1925,6 +2071,7 @@ function openDetail(id) {
     + '</div>'
     + '<div class="card" style="overflow-x:auto;-webkit-overflow-scrolling:touch;"><div class="ct">Oportunidades (' + deals.length + ') <button class="btn btn-ghost btn-sm" onclick="openDealModal(null,null,\'' + id + '\')">+</button></div>' + dealsHtml + '</div>'
     + '</div>'
+    + interactionsCardHtml
     + '<div class="card" style="margin-bottom:1rem;overflow-x:auto;-webkit-overflow-scrolling:touch;">'
     + '  <div class="ct" style="display:flex;justify-content:space-between;align-items:center;">Servicios Contratados / Activos (' + contractedServices.length + ') <button class="btn btn-primary btn-sm" style="padding:4px 10px;" onclick="openContractedServiceModal(null)">+ Agregar servicio</button></div>'
     + '  ' + srvsHtml
@@ -1940,6 +2087,154 @@ function closeDetail() {
   document.getElementById('clientDetail').classList.remove('open');
   document.getElementById('clientsList').style.display = 'block';
   currentClient = null;
+}
+
+// INTERACTION SYSTEM HELPERS - GLOBAL SCOPE
+function toggleInteractionForm(showFlag) {
+  var container = document.getElementById('interaction-form-container');
+  var btn = document.getElementById('btn-toggle-interaction-form');
+  if (!container) return;
+  
+  if (showFlag === undefined) {
+    showFlag = container.style.display === 'none';
+  }
+  
+  if (showFlag) {
+    container.style.display = 'block';
+    if (btn) btn.style.display = 'none';
+    
+    // Set default date/time to local datetime
+    var dateInput = document.getElementById('int-date');
+    if (dateInput) {
+      dateInput.value = getLocalDatetimeString();
+    }
+  } else {
+    container.style.display = 'none';
+    if (btn) btn.style.display = 'inline-flex';
+  }
+}
+
+function getLocalDatetimeString() {
+  var tzoffset = (new Date()).getTimezoneOffset() * 60000;
+  var localISOTime = (new Date(Date.now() - tzoffset)).toISOString().slice(0, 16);
+  return localISOTime;
+}
+
+function autoFillChannelAndOutcome() {
+  var type = document.getElementById('int-type').value;
+  var channelSel = document.getElementById('int-channel');
+  var outcomeSel = document.getElementById('int-outcome');
+  if (!channelSel || !outcomeSel) return;
+  
+  if (type === 'Llamada') {
+    channelSel.value = 'Teléfono';
+    outcomeSel.value = 'Contestó';
+  } else if (type === 'Mensaje') {
+    channelSel.value = 'WhatsApp';
+    outcomeSel.value = 'Mensaje enviado';
+  } else if (type === 'Correo') {
+    channelSel.value = 'Email';
+    outcomeSel.value = 'Mensaje enviado';
+  } else if (type === 'Reunión') {
+    channelSel.value = 'Zoom/Google Meet';
+    outcomeSel.value = 'Reunión completada';
+  } else if (type === 'Otro') {
+    channelSel.value = 'Otro';
+    outcomeSel.value = 'Contestó';
+  }
+}
+
+function saveNewInteraction(clientId) {
+  var type = document.getElementById('int-type').value;
+  var channel = document.getElementById('int-channel').value;
+  var outcome = document.getElementById('int-outcome').value;
+  var dateStr = document.getElementById('int-date').value;
+  var notes = document.getElementById('int-notes').value.trim();
+  
+  var contactDom = document.getElementById('int-contact');
+  var contactName = contactDom ? contactDom.value : '';
+  
+  if (!dateStr) {
+    alert('Por favor especifique la fecha y hora de la interacción');
+    return;
+  }
+  
+  // Find client
+  var clientIndex = -1;
+  for (var i = 0; i < db.clients.length; i++) {
+    if (db.clients[i].id === clientId) {
+      clientIndex = i;
+      break;
+    }
+  }
+  
+  if (clientIndex === -1) {
+    alert('Cliente no encontrado');
+    return;
+  }
+  
+  var c = db.clients[clientIndex];
+  if (!c.interactions) {
+    c.interactions = [];
+  }
+  
+  var newInt = {
+    id: uid(),
+    type: type,
+    channel: channel,
+    outcome: outcome,
+    contactName: contactName,
+    date: dateStr,
+    notes: notes,
+    createdAt: Date.now()
+  };
+  
+  c.interactions.push(newInt);
+  
+  saveDB();
+  openDetail(clientId);
+}
+
+function deleteInteraction(clientId, interactionId) {
+  if (!confirm('¿Está seguro de que desea eliminar este registro de interacción?')) {
+    return;
+  }
+  
+  var clientIndex = -1;
+  for (var i = 0; i < db.clients.length; i++) {
+    if (db.clients[i].id === clientId) {
+      clientIndex = i;
+      break;
+    }
+  }
+  
+  if (clientIndex === -1) return;
+  
+  var c = db.clients[clientIndex];
+  if (c.interactions) {
+    c.interactions = c.interactions.filter(function(item) {
+      return item.id !== interactionId;
+    });
+  }
+  
+  saveDB();
+  openDetail(clientId);
+}
+
+function getInteractionBadgeClass(outcome) {
+  if (!outcome) return 'b-aplazado';
+  var o = outcome.toLowerCase();
+  
+  if (o.indexOf('contestó') >= 0 || o.indexOf('completada') >= 0 || o.indexOf('realizada') >= 0 || o.indexOf('respondido') >= 0 || o.indexOf('respondió') >= 0 || o.indexOf('leyó') >= 0 || o.indexOf('leido') >= 0) {
+    return 'b-activo'; // teal
+  }
+  if (o.indexOf('perdida') >= 0 || o.indexOf('cancelada') >= 0 || o.indexOf('no contestó') >= 0 || o.indexOf('no contesto') >= 0 || o.indexOf('sin respuesta') >= 0) {
+    return 'b-pasado'; // red
+  }
+  if (o.indexOf('enviado') >= 0) {
+    return 'b-negociacion'; // amber / orange
+  }
+  return 'b-aplazado'; // grey
 }
 
 // CLIENT CONTACTS EXTRA DATA HELPERS
@@ -4545,6 +4840,12 @@ function deleteContractedService(serviceId) {
 }
 
 // Register global functions
+window.toggleInteractionForm = toggleInteractionForm;
+window.autoFillChannelAndOutcome = autoFillChannelAndOutcome;
+window.saveNewInteraction = saveNewInteraction;
+window.deleteInteraction = deleteInteraction;
+window.getInteractionBadgeClass = getInteractionBadgeClass;
+
 window.openContractedServiceModal = openContractedServiceModal;
 window.saveContractedService = saveContractedService;
 window.deleteContractedService = deleteContractedService;
