@@ -4925,6 +4925,9 @@ checkAuth();
   };
 
   function hasInitialLocalData() {
+    if (localStorage.getItem('integlis_crm4_bootstrapped') === 'true') {
+      return false;
+    }
     const parsed = window.initialLocalData;
     if (!parsed) return false;
     return (parsed.clients && parsed.clients.length > 0) || 
@@ -4954,6 +4957,7 @@ checkAuth();
           }
         }
       }
+      localStorage.setItem('integlis_crm4_bootstrapped', 'true');
     } catch(err) {
       console.error("Bootstrapping failed:", err);
     } finally {
@@ -4963,6 +4967,7 @@ checkAuth();
       COLLECTIONS.forEach(k => {
         window.db[k] = window.initialLocalData[k] || [];
       });
+      localStorage.setItem('integlis_crm4_bootstrapped', 'true');
       localStorage.setItem('integlis_crm4', JSON.stringify(window.db));
       if (typeof window.renderAllViews === 'function') {
         window.renderAllViews();
@@ -5377,6 +5382,7 @@ checkAuth();
               if (isFirestoreEmpty() && hasInitialLocalData()) {
                 bootstrapInitialLocalDataToCloud();
               } else {
+                localStorage.setItem('integlis_crm4_bootstrapped', 'true');
                 window.mergeFirestoreSnapshot();
                 if (typeof window.renderAllViews === 'function') {
                   window.renderAllViews();
