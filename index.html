@@ -4339,15 +4339,25 @@ function permanentlyDeleteTrashItem(trashId) {
 
       var found = db.trash[index];
       db.trash.splice(index, 1);
+      
+      var idsToDelete = [trashId];
+
       if (found.type === 'client') {
         db.trash = db.trash.filter(function(item) {
           if (item.cascadeFromClient === trashId) {
             db.permanentlyDeleted.push(item.id);
+            idsToDelete.push(item.id);
             return false;
           }
           return true;
         });
       }
+
+      // Explicitly delete from Firestore via exposed helper
+      if (typeof window.deleteTrashFromCloud === 'function') {
+        window.deleteTrashFromCloud(idsToDelete);
+      }
+
       saveDB();
       renderTrashItems();
       renderAllViews();
@@ -4382,6 +4392,11 @@ function emptyCurrentTrashTab() {
     db.trash = db.trash.filter(function(item) {
       return !idsToRemove.has(item.id);
     });
+
+    // Explicitly delete from Firestore via exposed helper
+    if (typeof window.deleteTrashFromCloud === 'function') {
+      window.deleteTrashFromCloud(Array.from(idsToRemove));
+    }
 
     saveDB();
     renderTrashItems();
@@ -5094,11 +5109,15 @@ checkAuth();
         for (const cachedItem of cacheList) {
           if (!cachedItem.id) continue;
           const localExists = localList.some(l => l.id === cachedItem.id);
+          console.log(`[Sync Delete Check] Collection: ${key}, Item ID: ${cachedItem.id}, Local Exists: ${localExists}`);
           if (!localExists) {
             const docRef = doc(firestoreDB, key, cachedItem.id);
             try {
+              console.log(`[Sync Deleting From Firestore] Collection: ${key}, Item: ${cachedItem.id}`);
               await deleteDoc(docRef);
+              console.log(`[Sync Deleted Successfully From Firestore] Collection: ${key}, Item: ${cachedItem.id}`);
             } catch(e) {
+              console.error(`[Sync Delete Error] Collection: ${key}, Item ID: ${cachedItem.id}`, e);
               handleFirestoreError(e, 'delete', `${key}/${cachedItem.id}`);
             }
           }
@@ -5121,6 +5140,37 @@ checkAuth();
         window.saveDB();
       }
     }
+  };
+
+  // Helper for explicit permanent trash deletion from Cloud Firestore
+  window.deleteTrashFromCloud = async function(trashIds) {
+    if (!auth.currentUser) return;
+    const ids = Array.isArray(trashIds) ? trashIds : [trashIds];
+    
+    // Visual feedback for syncing permanent deletes
+    const syncText = document.getElementById('cloud-sync-text');
+    const syncDot = document.getElementById('cloud-sync-dot');
+    if (syncText) syncText.textContent = 'Borrando permanentemente...';
+    if (syncDot) syncDot.style.backgroundColor = '#F5A623';
+
+    for (const trashId of ids) {
+      try {
+        const docRef = doc(firestoreDB, 'trash', trashId);
+        console.log(`[Explicit Firebase Delete] Deleting trash item: ${trashId}`);
+        await deleteDoc(docRef);
+        console.log(`[Explicit Firebase Delete] Successfully deleted: ${trashId}`);
+        
+        // Update local firestoreCache immediately so differential sync doesn't re-process it
+        if (window.firestoreCache['trash']) {
+          window.firestoreCache['trash'] = window.firestoreCache['trash'].filter(item => item.id !== trashId);
+        }
+      } catch (err) {
+        console.error(`[Explicit Firebase Delete Exception] for ID ${trashId}:`, err);
+      }
+    }
+    
+    if (syncText) syncText.textContent = 'Sincronizado';
+    if (syncDot) syncDot.style.backgroundColor = '#0FB8A0';
   };
 
   // Hook login submit button fallback
