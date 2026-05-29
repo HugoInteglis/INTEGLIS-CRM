@@ -4333,11 +4333,18 @@ function permanentlyDeleteTrashItem(trashId) {
       if (db.trash[i].id === trashId) { index = i; break; }
     }
     if (index > -1) {
+      if (!db.permanentlyDeleted) db.permanentlyDeleted = [];
+      db.permanentlyDeleted.push(trashId);
+
       var found = db.trash[index];
       db.trash.splice(index, 1);
       if (found.type === 'client') {
         db.trash = db.trash.filter(function(item) {
-          return item.cascadeFromClient !== trashId;
+          if (item.cascadeFromClient === trashId) {
+            db.permanentlyDeleted.push(item.id);
+            return false;
+          }
+          return true;
         });
       }
       saveDB();
@@ -4351,6 +4358,22 @@ function emptyCurrentTrashTab() {
   var count = db.trash.filter(function(item) { return item.type === currentTrashTabType; }).length;
   if (count === 0) return;
   customConfirm('¿Eliminar definitivamente ' + count + ' elementos de esta sección? Esta acción no se puede deshacer.', function() {
+    if (!db.permanentlyDeleted) db.permanentlyDeleted = [];
+    
+    // Add matching items and cascaded sub-items of clients to permanentlyDeleted list
+    db.trash.forEach(function(item) {
+      if (item.type === currentTrashTabType) {
+        db.permanentlyDeleted.push(item.id);
+        if (item.type === 'client') {
+          db.trash.forEach(function(sub) {
+            if (sub.cascadeFromClient === item.id) {
+              db.permanentlyDeleted.push(sub.id);
+            }
+          });
+        }
+      }
+    });
+
     db.trash = db.trash.filter(function(item) {
       if (item.type === currentTrashTabType) {
         if (item.type === 'client') {
@@ -5169,13 +5192,14 @@ checkAuth();
 
     // 1. Gather all trash IDs to detect deleted items
     const trashIds = new Set();
+    const permDeleted = new Set(window.db.permanentlyDeleted || []);
     
     // Check both local and firestore cache for deleted item IDs
     const localTrash = window.db['trash'] || [];
     const cacheTrash = window.firestoreCache['trash'] || [];
     
-    localTrash.forEach(item => { if (item.id) trashIds.add(item.id); });
-    cacheTrash.forEach(item => { if (item.id) trashIds.add(item.id); });
+    localTrash.forEach(item => { if (item.id && !permDeleted.has(item.id)) trashIds.add(item.id); });
+    cacheTrash.forEach(item => { if (item.id && !permDeleted.has(item.id)) trashIds.add(item.id); });
 
     // 2. Perform merge for each collection
     let hasLocalChanges = false;
@@ -5188,7 +5212,7 @@ checkAuth();
         
         // Add cache trash
         cacheTrash.forEach(item => {
-          if (item.id && !seenTrashIds.has(item.id)) {
+          if (item.id && !seenTrashIds.has(item.id) && !permDeleted.has(item.id)) {
             mergedTrash.push(item);
             seenTrashIds.add(item.id);
           }
@@ -5196,7 +5220,7 @@ checkAuth();
         
         // Add local trash
         localTrash.forEach(item => {
-          if (item.id && !seenTrashIds.has(item.id)) {
+          if (item.id && !seenTrashIds.has(item.id) && !permDeleted.has(item.id)) {
             mergedTrash.push(item);
             seenTrashIds.add(item.id);
             hasLocalChanges = true; // We have local trash that wasn't in cache
@@ -5217,7 +5241,7 @@ checkAuth();
         if (!item.id) return;
         
         // If it was deleted, skip it!
-        if (trashIds.has(item.id)) {
+        if (trashIds.has(item.id) || permDeleted.has(item.id)) {
           return;
         }
 
@@ -5251,7 +5275,7 @@ checkAuth();
         }
 
         // If it was deleted, skip it
-        if (trashIds.has(item.id)) {
+        if (trashIds.has(item.id) || permDeleted.has(item.id)) {
           return;
         }
 
@@ -5269,6 +5293,18 @@ checkAuth();
 
       window.db[key] = mergedList;
     });
+
+    // Self-cleaning of permanentlyDeleted list:
+    // If an ID in permanentlyDeleted is no longer present in any of the firestoreCache collections,
+    // we can remove it because Firestore has successfully processed its deletion!
+    if (window.db.permanentlyDeleted) {
+      window.db.permanentlyDeleted = window.db.permanentlyDeleted.filter(id => {
+        return COLLECTIONS.some(key => {
+          const cacheList = window.firestoreCache[key] || [];
+          return cacheList.some(item => item.id === id);
+        });
+      });
+    }
 
     // Save of the merged list to localStorage
     localStorage.setItem('integlis_crm4', JSON.stringify(window.db));
