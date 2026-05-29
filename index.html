@@ -1249,6 +1249,7 @@ function loadDB() {
   if (!db.docs) db.docs = [];
   if (!db.tasks) db.tasks = [];
   if (!db.trash) db.trash = [];
+  if (!db.permanentlyDeleted) db.permanentlyDeleted = [];
 }
 function saveDB() { localStorage.setItem('integlis_crm4', JSON.stringify(db)); }
 var confirmCallback = null;
@@ -4794,6 +4795,7 @@ checkAuth();
 
   // Connect and backup window.db immediately to prevent accidental wipes during initialization
   if (window.db && typeof window.db.clients !== 'undefined') {
+    window.db.permanentlyDeleted = [];
     window.initialLocalData = JSON.parse(JSON.stringify(window.db));
   } else {
     // Re-verify if there is a global CRM database we can recover
@@ -4805,8 +4807,9 @@ checkAuth();
     
     if (globalDbPreset && globalDbPreset.clients) {
       window.db = globalDbPreset;
+      window.db.permanentlyDeleted = [];
     } else {
-      window.db = { clients: [], deals: [], quotes: [], docs: [], tasks: [], trash: [] };
+      window.db = { clients: [], deals: [], quotes: [], docs: [], tasks: [], trash: [], permanentlyDeleted: [] };
     }
     window.initialLocalData = JSON.parse(JSON.stringify(window.db));
   }
@@ -5319,16 +5322,10 @@ checkAuth();
     });
 
     // Self-cleaning of permanentlyDeleted list:
-    // If an ID in permanentlyDeleted is no longer present in any of the firestoreCache collections,
-    // we can remove it because Firestore has successfully processed its deletion!
-    if (window.db.permanentlyDeleted) {
-      window.db.permanentlyDeleted = window.db.permanentlyDeleted.filter(id => {
-        return COLLECTIONS.some(key => {
-          const cacheList = window.firestoreCache[key] || [];
-          return cacheList.some(item => item.id === id);
-        });
-      });
-    }
+    // Instead of aggressively clearing permanentlyDeleted immediately (which causes race conditions 
+    // with incoming snapshot sync events before the server finishes processing the Firestore deleteDoc),
+    // we keep permanentlyDeleted intact for the lifetime of the active session. This successfully 
+    // shields recently deleted items from coming back during snapshots. We clear it on page reload/startup instead.
 
     // Save of the merged list to localStorage
     localStorage.setItem('integlis_crm4', JSON.stringify(window.db));
