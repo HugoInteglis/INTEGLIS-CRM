@@ -4360,13 +4360,16 @@ function emptyCurrentTrashTab() {
   customConfirm('¿Eliminar definitivamente ' + count + ' elementos de esta sección? Esta acción no se puede deshacer.', function() {
     if (!db.permanentlyDeleted) db.permanentlyDeleted = [];
     
-    // Add matching items and cascaded sub-items of clients to permanentlyDeleted list
+    // 1. Gather all trash IDs to be permanently deleted
+    var idsToRemove = new Set();
     db.trash.forEach(function(item) {
       if (item.type === currentTrashTabType) {
+        idsToRemove.add(item.id);
         db.permanentlyDeleted.push(item.id);
         if (item.type === 'client') {
           db.trash.forEach(function(sub) {
             if (sub.cascadeFromClient === item.id) {
+              idsToRemove.add(sub.id);
               db.permanentlyDeleted.push(sub.id);
             }
           });
@@ -4374,17 +4377,11 @@ function emptyCurrentTrashTab() {
       }
     });
 
+    // 2. Filter them out from db.trash in a single clean pass
     db.trash = db.trash.filter(function(item) {
-      if (item.type === currentTrashTabType) {
-        if (item.type === 'client') {
-          db.trash = db.trash.filter(function(sub) {
-            return sub.cascadeFromClient !== item.id;
-          });
-        }
-        return false;
-      }
-      return true;
+      return !idsToRemove.has(item.id);
     });
+
     saveDB();
     renderTrashItems();
     renderAllViews();
@@ -5190,6 +5187,28 @@ checkAuth();
     console.log("Running bidirectional/LWW Firestore merge...");
     if (!auth.currentUser) return;
 
+    // Detect items that were recently deleted from Firestore on a per-collection basis.
+    // If an item was in the previous Firestore cache but is missing in the current cache,
+    // it was deleted from the server.
+    const serverDeletedIds = {};
+    if (window.lastFirestoreCache) {
+      COLLECTIONS.forEach(k => {
+        serverDeletedIds[k] = new Set();
+        const prevList = window.lastFirestoreCache[k] || [];
+        const currentList = window.firestoreCache[k] || [];
+        const currentIds = new Set(currentList.map(item => item.id).filter(Boolean));
+        prevList.forEach(item => {
+          if (item.id && !currentIds.has(item.id)) {
+            serverDeletedIds[k].add(item.id);
+          }
+        });
+      });
+    } else {
+      COLLECTIONS.forEach(k => {
+        serverDeletedIds[k] = new Set();
+      });
+    }
+
     // 1. Gather all trash IDs to detect deleted items
     const trashIds = new Set();
     const permDeleted = new Set(window.db.permanentlyDeleted || []);
@@ -5198,8 +5217,8 @@ checkAuth();
     const localTrash = window.db['trash'] || [];
     const cacheTrash = window.firestoreCache['trash'] || [];
     
-    localTrash.forEach(item => { if (item.id && !permDeleted.has(item.id)) trashIds.add(item.id); });
-    cacheTrash.forEach(item => { if (item.id && !permDeleted.has(item.id)) trashIds.add(item.id); });
+    localTrash.forEach(item => { if (item.id && !permDeleted.has(item.id) && !serverDeletedIds['trash'].has(item.id)) trashIds.add(item.id); });
+    cacheTrash.forEach(item => { if (item.id && !permDeleted.has(item.id) && !serverDeletedIds['trash'].has(item.id)) trashIds.add(item.id); });
 
     // 2. Perform merge for each collection
     let hasLocalChanges = false;
@@ -5212,7 +5231,7 @@ checkAuth();
         
         // Add cache trash
         cacheTrash.forEach(item => {
-          if (item.id && !seenTrashIds.has(item.id) && !permDeleted.has(item.id)) {
+          if (item.id && !seenTrashIds.has(item.id) && !permDeleted.has(item.id) && !serverDeletedIds['trash'].has(item.id)) {
             mergedTrash.push(item);
             seenTrashIds.add(item.id);
           }
@@ -5220,7 +5239,7 @@ checkAuth();
         
         // Add local trash
         localTrash.forEach(item => {
-          if (item.id && !seenTrashIds.has(item.id) && !permDeleted.has(item.id)) {
+          if (item.id && !seenTrashIds.has(item.id) && !permDeleted.has(item.id) && !serverDeletedIds['trash'].has(item.id)) {
             mergedTrash.push(item);
             seenTrashIds.add(item.id);
             hasLocalChanges = true; // We have local trash that wasn't in cache
@@ -5241,7 +5260,7 @@ checkAuth();
         if (!item.id) return;
         
         // If it was deleted, skip it!
-        if (trashIds.has(item.id) || permDeleted.has(item.id)) {
+        if (trashIds.has(item.id) || permDeleted.has(item.id) || serverDeletedIds[key].has(item.id)) {
           return;
         }
 
@@ -5275,7 +5294,7 @@ checkAuth();
         }
 
         // If it was deleted, skip it
-        if (trashIds.has(item.id) || permDeleted.has(item.id)) {
+        if (trashIds.has(item.id) || permDeleted.has(item.id) || serverDeletedIds[key].has(item.id)) {
           return;
         }
 
@@ -5341,6 +5360,12 @@ checkAuth();
         const q = query(collection(firestoreDB, key), where("ownerId", "==", user.uid));
         const unsub = onSnapshot(q, (snapshot) => {
           const fetchedList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+          
+          if (window.firestoreCache[key]) {
+            window.lastFirestoreCache = window.lastFirestoreCache || {};
+            window.lastFirestoreCache[key] = JSON.parse(JSON.stringify(window.firestoreCache[key]));
+          }
+          
           window.firestoreCache[key] = JSON.parse(JSON.stringify(fetchedList));
 
           if (!window.isSavingToFirebase) {
